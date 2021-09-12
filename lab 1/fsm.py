@@ -1,4 +1,5 @@
 import fsm_sm
+import statemap
 
 natural = "123456789"
 digit = "0123456789"
@@ -19,14 +20,20 @@ class Fsm:
 
     def parse(self, string):
         self.fsm.enterStartState()
+        s = ""
+        i = 0
         for c in string:
+            if c != " " and i == 0:
+                s += c
+            if c == " ":
+                i += 1
             if c in natural:
                 self.fsm.natural()
             if c in digit:
                 self.fsm.digit()
             if 97 <= ord(c) <= 122 or 65 <= ord(c) <= 90:
                 self.fsm.alpha()
-            if 97 <= ord(c) <= 122 and c in digit or 65 <= ord(c) <= 90 and c in digit:
+            if 97 <= ord(c) <= 122 or 65 <= ord(c) <= 90 or c in digit:
                 self.fsm.alnum()
             if c == separator:
                 self.fsm.separator()
@@ -36,4 +43,10 @@ class Fsm:
                 self.fsm.operations()
             else:
                 break
-        return self.flag
+
+        try:
+            self.fsm.EOS()
+        except statemap.TransitionUndefinedException:
+            self.flag = False
+
+        return self.flag, i
