@@ -1,0 +1,71 @@
+%start Map1::q0
+%class Fsm
+
+%map Map1
+%%
+// State        Transition      End State       Action(s)
+q0
+{
+                natural           q1              {}
+}
+q1
+{
+                digit             q1              {}
+                separator         q2              {}
+}
+q2
+{
+                alpha             q3              {}
+}
+q3
+{
+                alnum             q3              {}
+                separator         q4              {}
+                equal             q5              {}
+}
+q4
+{
+                separator         q4              {}
+                equal             q5              {}
+}
+q5
+{
+                separator         q6              {}
+                minus             q7              {}
+                alpha             q8              {}
+                natural           q9              {}
+}
+q6
+{
+               separator          q6              {}
+               minus              q7              {}
+               alnum              q8              {}
+               natural            q9              {}
+}
+q7
+{
+               natural            q9              {}
+}
+q8
+{
+               alnum              q8              {}
+               operations         q5              {}
+               separator          q10             {}
+               EOS                OK              {}
+}
+q9
+{
+               digit              q9              {}
+               EOS                OK              {}
+               separator          q10             {}
+}
+q10
+{
+               separator          q10             {}
+               EOS                OK              {}
+               operations         q5              {}
+}
+OK
+{
+}
+%%
