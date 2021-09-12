@@ -46,194 +46,194 @@ class FsmState(statemap.State):
             fsm.getState().getName(), fsm.getTransition())
         raise statemap.TransitionUndefinedException(msg)
 
-class Map1_Default(FsmState):
+class FSM_Default(FsmState):
     pass
 
-class Map1_q0(Map1_Default):
+class FSM_q0(FSM_Default):
 
     def natural(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q1)
+        fsm.setState(FSM.q1)
         fsm.getState().Entry(fsm)
 
-class Map1_q1(Map1_Default):
+class FSM_q1(FSM_Default):
 
     def digit(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q1)
+        fsm.setState(FSM.q1)
         fsm.getState().Entry(fsm)
 
     def separator(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q2)
+        fsm.setState(FSM.q2)
         fsm.getState().Entry(fsm)
 
-class Map1_q2(Map1_Default):
+class FSM_q2(FSM_Default):
 
     def alpha(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q3)
+        fsm.setState(FSM.q3)
         fsm.getState().Entry(fsm)
 
-class Map1_q3(Map1_Default):
+class FSM_q3(FSM_Default):
 
     def alnum(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q3)
+        fsm.setState(FSM.q3)
         fsm.getState().Entry(fsm)
 
     def equal(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q5)
+        fsm.setState(FSM.q5)
         fsm.getState().Entry(fsm)
 
     def separator(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q4)
+        fsm.setState(FSM.q4)
         fsm.getState().Entry(fsm)
 
-class Map1_q4(Map1_Default):
+class FSM_q4(FSM_Default):
 
     def equal(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q5)
+        fsm.setState(FSM.q5)
         fsm.getState().Entry(fsm)
 
     def separator(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q4)
+        fsm.setState(FSM.q4)
         fsm.getState().Entry(fsm)
 
-class Map1_q5(Map1_Default):
+class FSM_q5(FSM_Default):
 
     def alpha(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q8)
+        fsm.setState(FSM.q8)
         fsm.getState().Entry(fsm)
 
     def minus(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q7)
+        fsm.setState(FSM.q7)
         fsm.getState().Entry(fsm)
 
     def natural(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q9)
+        fsm.setState(FSM.q9)
         fsm.getState().Entry(fsm)
 
     def separator(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q6)
+        fsm.setState(FSM.q6)
         fsm.getState().Entry(fsm)
 
-class Map1_q6(Map1_Default):
+class FSM_q6(FSM_Default):
 
     def alnum(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q8)
+        fsm.setState(FSM.q8)
         fsm.getState().Entry(fsm)
 
     def minus(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q7)
+        fsm.setState(FSM.q7)
         fsm.getState().Entry(fsm)
 
     def natural(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q9)
+        fsm.setState(FSM.q9)
         fsm.getState().Entry(fsm)
 
     def separator(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q6)
+        fsm.setState(FSM.q6)
         fsm.getState().Entry(fsm)
 
-class Map1_q7(Map1_Default):
+class FSM_q7(FSM_Default):
 
     def natural(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q9)
+        fsm.setState(FSM.q9)
         fsm.getState().Entry(fsm)
 
-class Map1_q8(Map1_Default):
+class FSM_q8(FSM_Default):
 
     def EOS(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.OK)
+        fsm.setState(FSM.OK)
         fsm.getState().Entry(fsm)
 
     def alnum(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q8)
+        fsm.setState(FSM.q8)
         fsm.getState().Entry(fsm)
 
     def operations(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q5)
+        fsm.setState(FSM.q5)
         fsm.getState().Entry(fsm)
 
     def separator(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q10)
+        fsm.setState(FSM.q10)
         fsm.getState().Entry(fsm)
 
-class Map1_q9(Map1_Default):
+class FSM_q9(FSM_Default):
 
     def EOS(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.OK)
+        fsm.setState(FSM.OK)
         fsm.getState().Entry(fsm)
 
     def digit(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q9)
+        fsm.setState(FSM.q9)
         fsm.getState().Entry(fsm)
 
     def separator(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q10)
+        fsm.setState(FSM.q10)
         fsm.getState().Entry(fsm)
 
-class Map1_q10(Map1_Default):
+class FSM_q10(FSM_Default):
 
     def EOS(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.OK)
+        fsm.setState(FSM.OK)
         fsm.getState().Entry(fsm)
 
     def operations(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q5)
+        fsm.setState(FSM.q5)
         fsm.getState().Entry(fsm)
 
     def separator(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(Map1.q10)
+        fsm.setState(FSM.q10)
         fsm.getState().Entry(fsm)
 
-class Map1_OK(Map1_Default):
+class FSM_OK(FSM_Default):
     pass
 
-class Map1(object):
+class FSM(object):
 
-    q0 = Map1_q0('Map1.q0', 0)
-    q1 = Map1_q1('Map1.q1', 1)
-    q2 = Map1_q2('Map1.q2', 2)
-    q3 = Map1_q3('Map1.q3', 3)
-    q4 = Map1_q4('Map1.q4', 4)
-    q5 = Map1_q5('Map1.q5', 5)
-    q6 = Map1_q6('Map1.q6', 6)
-    q7 = Map1_q7('Map1.q7', 7)
-    q8 = Map1_q8('Map1.q8', 8)
-    q9 = Map1_q9('Map1.q9', 9)
-    q10 = Map1_q10('Map1.q10', 10)
-    OK = Map1_OK('Map1.OK', 11)
-    Default = Map1_Default('Map1.Default', -1)
+    q0 = FSM_q0('FSM.q0', 0)
+    q1 = FSM_q1('FSM.q1', 1)
+    q2 = FSM_q2('FSM.q2', 2)
+    q3 = FSM_q3('FSM.q3', 3)
+    q4 = FSM_q4('FSM.q4', 4)
+    q5 = FSM_q5('FSM.q5', 5)
+    q6 = FSM_q6('FSM.q6', 6)
+    q7 = FSM_q7('FSM.q7', 7)
+    q8 = FSM_q8('FSM.q8', 8)
+    q9 = FSM_q9('FSM.q9', 9)
+    q10 = FSM_q10('FSM.q10', 10)
+    OK = FSM_OK('FSM.OK', 11)
+    Default = FSM_Default('FSM.Default', -1)
 
 class Fsm_sm(statemap.FSMContext):
 
     def __init__(self, owner):
-        statemap.FSMContext.__init__(self, Map1.q0)
+        statemap.FSMContext.__init__(self, FSM.q0)
         self._owner = owner
 
     def __getattr__(self, attrib):

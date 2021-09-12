@@ -1,7 +1,7 @@
-%start Map1::q0
+%start FSM::q0
 %class Fsm
 
-%map Map1
+%map FSM
 %%
 // State        Transition      End State       Action(s)
 q0
