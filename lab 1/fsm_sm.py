@@ -17,9 +17,6 @@ class FsmState(statemap.State):
     def EOS(self, fsm):
         self.Default(fsm)
 
-    def alnum(self, fsm):
-        self.Default(fsm)
-
     def alpha(self, fsm):
         self.Default(fsm)
 
@@ -27,9 +24,6 @@ class FsmState(statemap.State):
         self.Default(fsm)
 
     def equal(self, fsm):
-        self.Default(fsm)
-
-    def minus(self, fsm):
         self.Default(fsm)
 
     def natural(self, fsm):
@@ -77,7 +71,12 @@ class FSM_q2(FSM_Default):
 
 class FSM_q3(FSM_Default):
 
-    def alnum(self, fsm):
+    def alpha(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(FSM.q3)
+        fsm.getState().Entry(fsm)
+
+    def digit(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q3)
         fsm.getState().Entry(fsm)
@@ -111,14 +110,14 @@ class FSM_q5(FSM_Default):
         fsm.setState(FSM.q8)
         fsm.getState().Entry(fsm)
 
-    def minus(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(FSM.q7)
-        fsm.getState().Entry(fsm)
-
     def natural(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q9)
+        fsm.getState().Entry(fsm)
+
+    def operations(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(FSM.q7)
         fsm.getState().Entry(fsm)
 
     def separator(self, fsm):
@@ -128,19 +127,24 @@ class FSM_q5(FSM_Default):
 
 class FSM_q6(FSM_Default):
 
-    def alnum(self, fsm):
+    def alpha(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q8)
         fsm.getState().Entry(fsm)
 
-    def minus(self, fsm):
+    def digit(self, fsm):
         fsm.getState().Exit(fsm)
-        fsm.setState(FSM.q7)
+        fsm.setState(FSM.q8)
         fsm.getState().Entry(fsm)
 
     def natural(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q9)
+        fsm.getState().Entry(fsm)
+
+    def operations(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(FSM.q7)
         fsm.getState().Entry(fsm)
 
     def separator(self, fsm):
@@ -162,7 +166,12 @@ class FSM_q8(FSM_Default):
         fsm.setState(FSM.OK)
         fsm.getState().Entry(fsm)
 
-    def alnum(self, fsm):
+    def alpha(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(FSM.q8)
+        fsm.getState().Entry(fsm)
+
+    def digit(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q8)
         fsm.getState().Entry(fsm)

@@ -2,23 +2,41 @@ import fsm_sm
 import fsm
 
 d = {}
+true = set()
+false = set()
 
 
-def check():
-    while True:
+def check(a):
+    for j in range(a):
         string = input()
         machine = fsm.Fsm()
         flag, num = machine.parse(string)
-        try:
-            d[num] += 1
-        except KeyError:
-            d[num] = 1
+        if flag:
+            true.add(num)
+            try:
+                d[num] += 1
+            except KeyError:
+                d[num] = 1
+        else:
+            false.add(num)
 
 
-#if __name__ == "__main__":
-#    check()
-#    for key, values in d.items():
-#        print("{0}: {1}".format(key, values))
-
-for property, value in vars(fsm_sm.FSM_q0).iteritems():
-    print(property, ":", value)
+if __name__ == "__main__":
+    count = int(input("Enter the number of strings: "))
+    print("Enter strings:")
+    check(count)
+    print("Correct strings:")
+    if len(true) == 0:
+        print("Empty")
+    else:
+        for i in sorted(list(true)):
+            print(i, sep=" ")
+    print("Incorrect strings:")
+    if len(false) == 0:
+        print("Empty")
+    else:
+        for i in sorted(list(false)):
+            print(i, sep=" ")
+    print("Correct string usage statistics:")
+    for key in sorted(d.keys()):
+        print("{0}: {1}".format(key, d[key]))

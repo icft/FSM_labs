@@ -19,7 +19,8 @@ q2
 }
 q3
 {
-                alnum             q3              {}
+                alpha             q3              {}
+                digit             q3              {}
                 separator         q4              {}
                 equal             q5              {}
 }
@@ -31,15 +32,16 @@ q4
 q5
 {
                 separator         q6              {}
-                minus             q7              {}
+                operations        q7              {}
                 alpha             q8              {}
                 natural           q9              {}
 }
 q6
 {
                separator          q6              {}
-               minus              q7              {}
-               alnum              q8              {}
+               operations         q7              {}
+               alpha              q8              {}
+               digit              q8              {}
                natural            q9              {}
 }
 q7
@@ -48,7 +50,8 @@ q7
 }
 q8
 {
-               alnum              q8              {}
+               alpha              q8              {}
+               digit              q8              {}
                operations         q5              {}
                separator          q10             {}
                EOS                OK              {}
