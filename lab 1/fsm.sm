@@ -55,6 +55,7 @@ q8
 }
 q9
 {
+               operations         q5              {}
                digit              q9              {}
                EOS                OK              {}
                separator          q10             {}

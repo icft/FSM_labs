@@ -8,6 +8,7 @@ ascii_lower_start = 97
 ascii_lower_end = 122
 ascii_upper_start = 65
 ascii_upper_end = 90
+minus = "-"
 equal = "="
 operations = "+-*/"
 
@@ -27,26 +28,30 @@ class Fsm:
                 s += c
             if c == " ":
                 i += 1
+            print(c)
+            print(self.fsm.getState())
             if c in natural:
                 self.fsm.natural()
-            if c in digit:
+            elif c in digit:
                 self.fsm.digit()
-            if 97 <= ord(c) <= 122 or 65 <= ord(c) <= 90:
+            elif 97 <= ord(c) <= 122 or 65 <= ord(c) <= 90:
                 self.fsm.alpha()
-            if 97 <= ord(c) <= 122 or 65 <= ord(c) <= 90 or c in digit:
+            elif 97 <= ord(c) <= 122 or 65 <= ord(c) <= 90 or c in digit:
                 self.fsm.alnum()
-            if c == separator:
+            elif c == minus:
+                self.fsm.minus()
+            elif c == separator:
                 self.fsm.separator()
-            if c == equal:
+            elif c == equal:
                 self.fsm.equal()
-            if c in operations:
+            elif c in operations:
                 self.fsm.operations()
             else:
                 break
-
         try:
             self.fsm.EOS()
+            self.flag = True
         except statemap.TransitionUndefinedException:
             self.flag = False
-
-        return self.flag, i
+        print(self.flag)
+        return self.flag, int(s)

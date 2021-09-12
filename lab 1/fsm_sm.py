@@ -46,10 +46,8 @@ class FsmState(statemap.State):
             fsm.getState().getName(), fsm.getTransition())
         raise statemap.TransitionUndefinedException(msg)
 
-
 class FSM_Default(FsmState):
     pass
-
 
 class FSM_q0(FSM_Default):
 
@@ -57,7 +55,6 @@ class FSM_q0(FSM_Default):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q1)
         fsm.getState().Entry(fsm)
-
 
 class FSM_q1(FSM_Default):
 
@@ -71,14 +68,12 @@ class FSM_q1(FSM_Default):
         fsm.setState(FSM.q2)
         fsm.getState().Entry(fsm)
 
-
 class FSM_q2(FSM_Default):
 
     def alpha(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q3)
         fsm.getState().Entry(fsm)
-
 
 class FSM_q3(FSM_Default):
 
@@ -97,7 +92,6 @@ class FSM_q3(FSM_Default):
         fsm.setState(FSM.q4)
         fsm.getState().Entry(fsm)
 
-
 class FSM_q4(FSM_Default):
 
     def equal(self, fsm):
@@ -109,7 +103,6 @@ class FSM_q4(FSM_Default):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q4)
         fsm.getState().Entry(fsm)
-
 
 class FSM_q5(FSM_Default):
 
@@ -133,7 +126,6 @@ class FSM_q5(FSM_Default):
         fsm.setState(FSM.q6)
         fsm.getState().Entry(fsm)
 
-
 class FSM_q6(FSM_Default):
 
     def alnum(self, fsm):
@@ -156,14 +148,12 @@ class FSM_q6(FSM_Default):
         fsm.setState(FSM.q6)
         fsm.getState().Entry(fsm)
 
-
 class FSM_q7(FSM_Default):
 
     def natural(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q9)
         fsm.getState().Entry(fsm)
-
 
 class FSM_q8(FSM_Default):
 
@@ -187,7 +177,6 @@ class FSM_q8(FSM_Default):
         fsm.setState(FSM.q10)
         fsm.getState().Entry(fsm)
 
-
 class FSM_q9(FSM_Default):
 
     def EOS(self, fsm):
@@ -200,11 +189,15 @@ class FSM_q9(FSM_Default):
         fsm.setState(FSM.q9)
         fsm.getState().Entry(fsm)
 
+    def operations(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(FSM.q5)
+        fsm.getState().Entry(fsm)
+
     def separator(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q10)
         fsm.getState().Entry(fsm)
-
 
 class FSM_q10(FSM_Default):
 
@@ -223,12 +216,11 @@ class FSM_q10(FSM_Default):
         fsm.setState(FSM.q10)
         fsm.getState().Entry(fsm)
 
-
 class FSM_OK(FSM_Default):
     pass
 
-
 class FSM(object):
+
     q0 = FSM_q0('FSM.q0', 0)
     q1 = FSM_q1('FSM.q1', 1)
     q2 = FSM_q2('FSM.q2', 2)
@@ -243,7 +235,6 @@ class FSM(object):
     OK = FSM_OK('FSM.OK', 11)
     Default = FSM_Default('FSM.Default', -1)
 
-
 class Fsm_sm(statemap.FSMContext):
 
     def __init__(self, owner):
@@ -255,7 +246,6 @@ class Fsm_sm(statemap.FSMContext):
             self._transition = attrib
             getattr(self.getState(), attrib)(self, *arglist)
             self._transition = None
-
         return trans_sm
 
     def enterStartState(self):
