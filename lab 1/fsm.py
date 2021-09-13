@@ -7,13 +7,11 @@ ascii_lower_start = 97
 ascii_lower_end = 122
 ascii_upper_start = 65
 ascii_upper_end = 90
-minus = "-"
 equal = "="
 operations = "+-*/"
 
 
 class Fsm:
-
     def __init__(self):
         self.fsm = fsm_sm.Fsm_sm(self)
         self.flag = False
@@ -22,7 +20,6 @@ class Fsm:
         self.fsm.enterStartState()
         s = ""
         i = 0
-        #q0=0, q6=6, q7=7
         for c in string:
             if c != " " and i == 0:
                 s += c
