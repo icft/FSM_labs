@@ -14,7 +14,7 @@ operations = "+-*/"
 class Fsm:
     def __init__(self):
         self.fsm = fsm_sm.Fsm_sm(self)
-        self.flag = False
+        self.flag = None
 
     def parse(self, string):
         self.fsm.enterStartState()
