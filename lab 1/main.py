@@ -29,14 +29,12 @@ if __name__ == "__main__":
     if len(true) == 0:
         print("Empty")
     else:
-        for i in sorted(list(true)):
-            print(i, sep=" ")
+        print(*sorted(list(true)))
     print("Incorrect strings:")
     if len(false) == 0:
         print("Empty")
     else:
-        for i in sorted(list(false)):
-            print(i, sep=" ")
+        print(*sorted(list(false)))
     print("Correct string usage statistics:")
     for key in sorted(d.keys()):
         print("{0}: {1}".format(key, d[key]))
