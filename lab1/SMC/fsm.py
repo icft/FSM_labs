@@ -28,17 +28,32 @@ class Fsm:
             b = self.fsm.getState()
             if c in digit:
                 if b.getId() == 0 or b.getId() == 5 or b.getId() == 6 or b.getId() == 7:
-                    self.fsm.natural()
+                    try:
+                        self.fsm.natural()
+                    except statemap.TransitionUndefinedException:
+                        return False, None
                 else:
                     self.fsm.digit()
             elif 97 <= ord(c) <= 122 or 65 <= ord(c) <= 90:
-                self.fsm.alpha()
+                try:
+                    self.fsm.alpha()
+                except statemap.TransitionUndefinedException:
+                    return False, None
             elif c == separator:
-                self.fsm.separator()
+                try:
+                    self.fsm.separator()
+                except statemap.TransitionUndefinedException:
+                    return False, None
             elif c == equal:
-                self.fsm.equal()
+                try:
+                    self.fsm.equal()
+                except statemap.TransitionUndefinedException:
+                    return False, None
             elif c in operations:
-                self.fsm.operations()
+                try:
+                    self.fsm.operations()
+                except statemap.TransitionUndefinedException:
+                    return False, None
             else:
                 return False, int(s)
         try:
