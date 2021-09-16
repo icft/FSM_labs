@@ -33,7 +33,10 @@ class Fsm:
                     except statemap.TransitionUndefinedException:
                         return False, None
                 else:
-                    self.fsm.digit()
+                    try:
+                        self.fsm.digit()
+                    except statemap.TransitionUndefinedException:
+                        return False, None
             elif 97 <= ord(c) <= 122 or 65 <= ord(c) <= 90:
                 try:
                     self.fsm.alpha()

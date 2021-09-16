@@ -1,4 +1,3 @@
-import fsm_sm
 import fsm
 
 d = {}
