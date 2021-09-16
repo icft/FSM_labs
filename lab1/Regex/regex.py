@@ -21,7 +21,7 @@ def check(a):
                 d[num] = 1
 
 
-if __name__ == "__main__":
+def start():
     count = int(input("Enter the number of strings: "))
     print("Enter strings:")
     check(count)
@@ -31,3 +31,7 @@ if __name__ == "__main__":
     else:
         for key in sorted(d.keys()):
             print("{0}: {1}".format(key, d[key]))
+
+
+if __name__ == "__main__":
+    start()
