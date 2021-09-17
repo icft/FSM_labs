@@ -3,9 +3,10 @@ import lex_yacc.lex as lex
 
 d = {}
 
-tokens = ("STR",)
-t_STR = r"^[1-9]\d*\s[a-zA-z][a-zA-Z\d]*\s*=\s*(-?[1-9]\d*|[a-zA-Z][a-zA-Z\d]*)(\s*[+\-\*/]\s*(-?[1-9]\d*|" \
-        r"[a-zA-Z][a-zA-Z\d]*))?$"
+tokens = ("NUM", "STR")
+t_NUM = r"[1-9]\d*"
+t_STR = r"[a-zA-z][a-zA-Z\d]*\s*=\s*(-?[1-9]\d*|[a-zA-Z][a-zA-Z\d]*)(\s*[+\-\*/]\s*(-?[1-9]\d*|" \
+        r"[a-zA-Z][a-zA-Z\d]*))?"
 t_ignore = " \r\n\t\f"
 
 
@@ -24,13 +25,29 @@ def check(a):
         lexer.input(string)
         try:
             tok = lexer.token()
-            num = int(re.findall(r'\w+', string)[0])
-            try:
-                d[num] += 1
-            except KeyError:
-                d[num] = 1
+            if tok:
+                num = tok.value
+                try:
+                    tok = lexer.token()
+                    try:
+                        d[num] += 1
+                    except KeyError:
+                        d[num] = 1
+                except lex.LexError:
+                    continue
         except lex.LexError:
             continue
+
+        # try:
+        #     print(lexer.lexdata)
+        #     tok = lexer.token()
+        #     num = int(re.findall(r'\w+', string)[0])
+        #     try:
+        #         d[num] += 1
+        #     except KeyError:
+        #         d[num] = 1
+        # except lex.LexError:
+        #     continue
 
 
 def start():
