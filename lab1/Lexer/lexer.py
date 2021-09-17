@@ -1,20 +1,36 @@
 import re
+import lex_yacc.lex as lex
 
-sample = r"^[1-9]\d*\s[a-zA-z][a-zA-Z\d]*\s*=\s*(-?[1-9]\d*|[a-zA-Z][a-zA-Z\d]*)(\s*[+\-\*/]\s*(-?[1-9]\d*|" \
-         r"[a-zA-Z][a-zA-Z\d]*))?$"
 d = {}
+
+tokens = ("STR",)
+t_STR = r"^[1-9]\d*\s[a-zA-z][a-zA-Z\d]*\s*=\s*(-?[1-9]\d*|[a-zA-Z][a-zA-Z\d]*)(\s*[+\-\*/]\s*(-?[1-9]\d*|" \
+        r"[a-zA-Z][a-zA-Z\d]*))?$"
+t_ignore = " \r\n\t\f"
+
+
+def t_error(t):
+    # print("Illegal character %s" % t.value[0])
+    # t.lexer.skip(1)
+    pass
+
+
+lexer = lex.lex()
 
 
 def check(a):
     for j in range(a):
         string = input()
-        pattern = re.compile(sample)
-        if pattern.match(string):
+        lexer.input(string)
+        try:
+            tok = lexer.token()
             num = int(re.findall(r'\w+', string)[0])
             try:
                 d[num] += 1
             except KeyError:
                 d[num] = 1
+        except lex.LexError:
+            continue
 
 
 def start():
