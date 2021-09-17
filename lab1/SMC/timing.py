@@ -2,9 +2,12 @@ import fsm
 import time
 
 
-strings = ["1 b=1+1", "1 b=", "211212112 wopemwoemw   =    fwmdowwdwodwm        * wwinfijfwifjwfw",
-           "2 fomeofmefme=1+", "67 3343oofmoemfoeclmovme                                              =      666886"]
-
+strings = ["1 b=1+",
+           "1 bwdwwd=fdvmoidvnomdvslpdlwpdkwompomdpodmvvmlmvcmvlmvosdmvopdoskvddvddvdvvdvdsvvsdsdwqwdwq",
+           "211212112 wopemwoemw   =    fwmdowwdwodwm        * wwinfijfwifjwfw",
+           "2 fomeofmefme=1+32203898493247837483274384979372484718274812974129847812748498274724141272977428472487214",
+           "67 3343oofmoemfoeclmovme                                              =      666886",
+]
 
 def timing(x, y):
     machine = fsm.Fsm()

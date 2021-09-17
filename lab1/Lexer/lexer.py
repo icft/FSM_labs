@@ -24,30 +24,16 @@ def check(a):
         string = input()
         lexer.input(string)
         try:
-            tok = lexer.token()
-            if tok:
-                num = tok.value
+            tok1 = lexer.token()
+            tok2 = lexer.token()
+            if tok1 and tok2:
+                num = tok1.value
                 try:
-                    tok = lexer.token()
-                    try:
-                        d[num] += 1
-                    except KeyError:
-                        d[num] = 1
-                except lex.LexError:
-                    continue
+                    d[num] += 1
+                except KeyError:
+                    d[num] = 1
         except lex.LexError:
             continue
-
-        # try:
-        #     print(lexer.lexdata)
-        #     tok = lexer.token()
-        #     num = int(re.findall(r'\w+', string)[0])
-        #     try:
-        #         d[num] += 1
-        #     except KeyError:
-        #         d[num] = 1
-        # except lex.LexError:
-        #     continue
 
 
 def start():

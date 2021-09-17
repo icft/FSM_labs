@@ -5,21 +5,20 @@ import os
 sample = r"^[1-9]\d*\s[a-zA-z][\w\d]*\s*=\s*(-?[1-9]\d*|[a-zA-Z][\w\d]*)(\s*[+\-\*/]\s*(-?[1-9]\d*|" \
          r"[a-zA-Z][\w\d]*))?$"
 
-strings = ["1 b=1+1",
-           "1 bwdwwd=",
+strings = ["1 b=1+",
+           "1 bwdwwd=fdvmoidvnomdvslpdlwpdkwompomdpodmvvmlmvcmvlmvosdmvopdoskvddvddvdvvdvdsvvsdsdwqwdwq",
            "211212112 wopemwoemw   =    fwmdowwdwodwm        * wwinfijfwifjwfw",
-           "2 fomeofmefme=1+",
+           "2 fomeofmefme=1+32203898493247837483274384979372484718274812974129847812748498274724141272977428472487214",
            "67 3343oofmoemfoeclmovme                                              =      666886",
-           ]
-
+]
 
 def timing(x, y):
     pattern = re.compile(sample)
-    for i in strings:
+    for s in strings:
         start_time = time.perf_counter()
-        pattern.match(i)
+        pattern.match(s)
         y.append(time.perf_counter() - start_time)
-        x.append(len(i))
+        x.append(len(s))
 
 
 def start():
