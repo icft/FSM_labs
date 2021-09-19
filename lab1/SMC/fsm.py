@@ -15,53 +15,59 @@ class Fsm:
     def __init__(self):
         self.fsm = fsm_sm.Fsm_sm(self)
         self.flag = None
+        self.fsm.enterStartState()
 
     def parse(self, string):
-        self.fsm.enterStartState()
         s = ""
-        i = 0
+        num = None
         for c in string:
-            if c != " " and i == 0:
-                s += c
-            if c == " ":
-                i += 1
             b = self.fsm.getState()
+            if b == fsm_sm.FSM.q0 or b == fsm_sm.FSM.q1:
+                s += c
+            if b == fsm_sm.FSM.error:
+                break
             if c in digit:
-                if b.getId() == 0 or b.getId() == 5 or b.getId() == 6 or b.getId() == 7:
+                if b == fsm_sm.FSM.q0 or b == fsm_sm.FSM.q5 or \
+                        b == fsm_sm.FSM.q6 or b == fsm_sm.FSM.q7:
                     try:
                         self.fsm.natural()
                     except statemap.TransitionUndefinedException:
-                        return False, None
+                        self.fsm.err()
                 else:
                     try:
                         self.fsm.digit()
                     except statemap.TransitionUndefinedException:
-                        return False, None
+                        self.fsm.err()
             elif 97 <= ord(c) <= 122 or 65 <= ord(c) <= 90:
                 try:
                     self.fsm.alpha()
                 except statemap.TransitionUndefinedException:
-                    return False, None
+                    self.fsm.err()
             elif c == separator:
                 try:
                     self.fsm.separator()
                 except statemap.TransitionUndefinedException:
-                    return False, None
+                    self.fsm.err()
             elif c == equal:
                 try:
                     self.fsm.equal()
                 except statemap.TransitionUndefinedException:
-                    return False, None
+                    self.fsm.err()
             elif c in operations:
                 try:
                     self.fsm.operations()
                 except statemap.TransitionUndefinedException:
-                    return False, None
+                    self.fsm.err()
             else:
-                return False, int(s)
-        try:
-            self.fsm.EOS()
-            self.flag = True
-        except statemap.TransitionUndefinedException:
+                self.fsm.err()
+        if self.fsm.getState() == fsm_sm.FSM.error:
             self.flag = False
-        return self.flag, int(s)
+        else:
+            try:
+                self.fsm.EOS()
+                self.flag = True
+                num = int(s)
+            except statemap.TransitionUndefinedException:
+                self.fsm.err()
+        self.fsm.setState(fsm_sm.FSM.q0)
+        return self.flag, num

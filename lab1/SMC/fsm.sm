@@ -7,15 +7,20 @@
 q0
 {
                 natural           q1              {}
+                err               error             {}
 }
 q1
 {
                 digit             q1              {}
                 separator         q2              {}
+                err               error             {}
+
 }
 q2
 {
                 alpha             q3              {}
+                err               error             {}
+
 }
 q3
 {
@@ -23,11 +28,13 @@ q3
                 digit             q3              {}
                 separator         q4              {}
                 equal             q5              {}
+                err               error             {}
 }
 q4
 {
                 separator         q4              {}
                 equal             q5              {}
+                err               error             {}
 }
 q5
 {
@@ -35,6 +42,7 @@ q5
                 operations        q7              {}
                 alpha             q8              {}
                 natural           q9              {}
+                err               error             {}
 }
 q6
 {
@@ -43,10 +51,12 @@ q6
                alpha              q8              {}
                digit              q8              {}
                natural            q9              {}
+                err               error             {}
 }
 q7
 {
                natural            q9              {}
+                err               error             {}
 }
 q8
 {
@@ -55,6 +65,7 @@ q8
                operations         q5              {}
                separator          q10             {}
                EOS                OK              {}
+                err               error             {}
 }
 q9
 {
@@ -62,14 +73,19 @@ q9
                digit              q9              {}
                EOS                OK              {}
                separator          q10             {}
+                err               error             {}
 }
 q10
 {
                separator          q10             {}
                EOS                OK              {}
                operations         q5              {}
+                err               error             {}
 }
 OK
+{
+}
+error
 {
 }
 %%

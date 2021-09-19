@@ -4,9 +4,9 @@ d = {}
 
 
 def check(a):
+    machine = fsm.Fsm()
     for j in range(a):
         string = input()
-        machine = fsm.Fsm()
         flag, num = machine.parse(string)
         if flag:
             try:

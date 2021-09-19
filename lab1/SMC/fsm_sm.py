@@ -26,6 +26,9 @@ class FsmState(statemap.State):
     def equal(self, fsm):
         self.Default(fsm)
 
+    def err(self, fsm):
+        self.Default(fsm)
+
     def natural(self, fsm):
         self.Default(fsm)
 
@@ -45,6 +48,11 @@ class FSM_Default(FsmState):
 
 class FSM_q0(FSM_Default):
 
+    def err(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(FSM.error)
+        fsm.getState().Entry(fsm)
+
     def natural(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q1)
@@ -57,6 +65,11 @@ class FSM_q1(FSM_Default):
         fsm.setState(FSM.q1)
         fsm.getState().Entry(fsm)
 
+    def err(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(FSM.error)
+        fsm.getState().Entry(fsm)
+
     def separator(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q2)
@@ -67,6 +80,11 @@ class FSM_q2(FSM_Default):
     def alpha(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q3)
+        fsm.getState().Entry(fsm)
+
+    def err(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(FSM.error)
         fsm.getState().Entry(fsm)
 
 class FSM_q3(FSM_Default):
@@ -86,6 +104,11 @@ class FSM_q3(FSM_Default):
         fsm.setState(FSM.q5)
         fsm.getState().Entry(fsm)
 
+    def err(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(FSM.error)
+        fsm.getState().Entry(fsm)
+
     def separator(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q4)
@@ -98,6 +121,11 @@ class FSM_q4(FSM_Default):
         fsm.setState(FSM.q5)
         fsm.getState().Entry(fsm)
 
+    def err(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(FSM.error)
+        fsm.getState().Entry(fsm)
+
     def separator(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q4)
@@ -108,6 +136,11 @@ class FSM_q5(FSM_Default):
     def alpha(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q8)
+        fsm.getState().Entry(fsm)
+
+    def err(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(FSM.error)
         fsm.getState().Entry(fsm)
 
     def natural(self, fsm):
@@ -137,6 +170,11 @@ class FSM_q6(FSM_Default):
         fsm.setState(FSM.q8)
         fsm.getState().Entry(fsm)
 
+    def err(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(FSM.error)
+        fsm.getState().Entry(fsm)
+
     def natural(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q9)
@@ -153,6 +191,11 @@ class FSM_q6(FSM_Default):
         fsm.getState().Entry(fsm)
 
 class FSM_q7(FSM_Default):
+
+    def err(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(FSM.error)
+        fsm.getState().Entry(fsm)
 
     def natural(self, fsm):
         fsm.getState().Exit(fsm)
@@ -174,6 +217,11 @@ class FSM_q8(FSM_Default):
     def digit(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q8)
+        fsm.getState().Entry(fsm)
+
+    def err(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(FSM.error)
         fsm.getState().Entry(fsm)
 
     def operations(self, fsm):
@@ -198,6 +246,11 @@ class FSM_q9(FSM_Default):
         fsm.setState(FSM.q9)
         fsm.getState().Entry(fsm)
 
+    def err(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(FSM.error)
+        fsm.getState().Entry(fsm)
+
     def operations(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q5)
@@ -215,6 +268,11 @@ class FSM_q10(FSM_Default):
         fsm.setState(FSM.OK)
         fsm.getState().Entry(fsm)
 
+    def err(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(FSM.error)
+        fsm.getState().Entry(fsm)
+
     def operations(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q5)
@@ -226,6 +284,9 @@ class FSM_q10(FSM_Default):
         fsm.getState().Entry(fsm)
 
 class FSM_OK(FSM_Default):
+    pass
+
+class FSM_error(FSM_Default):
     pass
 
 class FSM(object):
@@ -242,6 +303,7 @@ class FSM(object):
     q9 = FSM_q9('FSM.q9', 9)
     q10 = FSM_q10('FSM.q10', 10)
     OK = FSM_OK('FSM.OK', 11)
+    error = FSM_error('FSM.error', 12)
     Default = FSM_Default('FSM.Default', -1)
 
 class Fsm_sm(statemap.FSMContext):
