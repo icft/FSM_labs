@@ -5,8 +5,8 @@ d = {}
 
 tokens = ("NUM", "STR")
 t_NUM = r"[1-9]\d*"
-t_STR = r"[a-zA-z][a-zA-Z\d]*\s*=\s*(-?[1-9]\d*|[a-zA-Z][a-zA-Z\d]*)(\s*[+\-\*/]\s*(-?[1-9]\d*|" \
-        r"[a-zA-Z][a-zA-Z\d]*))?"
+t_STR = r"[a-zA-z][a-zA-Z\d]{,15}\s*=\s*(-?[1-9]\d*|[a-zA-Z][a-zA-Z\d]{,15})(\s*[+\-\*/]\s*(-?[1-9]\d*|" \
+        r"[a-zA-Z][a-zA-Z\d]{,15}))?"
 t_ignore = " \r\n\t\f"
 
 

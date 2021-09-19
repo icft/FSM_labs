@@ -1,7 +1,7 @@
 import re
 
-sample = r"^[1-9]\d*\s[a-zA-z][a-zA-Z\d]*\s*=\s*(-?[1-9]\d*|[a-zA-Z][a-zA-Z\d]*)(\s*[+\-\*/]\s*(-?[1-9]\d*|" \
-         r"[a-zA-Z][a-zA-Z\d]*))?$"
+sample = r"^[1-9]\d*\s[a-zA-z][a-zA-Z\d]{,15}\s*=\s*(-?[1-9]\d*|[a-zA-Z][a-zA-Z\d]{,15})(\s*[+\-\*/]\s*(-?[1-9]\d*|" \
+         r"[a-zA-Z][a-zA-Z\d]{,15}))?$"
 d = {}
 
 
