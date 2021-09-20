@@ -14,21 +14,49 @@ operations = "+-*/"
 class Fsm:
     def __init__(self):
         self.fsm = fsm_sm.Fsm_sm(self)
-        self.flag = None
+        self.d = dict()
+        self.s = ""
+        self.count = 0
         self.fsm.enterStartState()
 
+    def createNumber(self, c):
+        self.s += c
+
+    def isValid(self):
+        if self.count <= 16:
+            return True
+        else:
+            return False
+
+    def resetCounter(self):
+        self.count = 0
+
+    def increase(self):
+        self.count += 1
+
     def parse(self, string):
-        s = ""
-        num = None
         for c in string:
             b = self.fsm.getState()
-            if b == fsm_sm.FSM.q0 or b == fsm_sm.FSM.q1:
-                s += c
+            # print(b, c)
             if b == fsm_sm.FSM.error:
                 break
             if c in digit:
-                if b == fsm_sm.FSM.q0 or b == fsm_sm.FSM.q5 or \
-                        b == fsm_sm.FSM.q6 or b == fsm_sm.FSM.q7:
+                if b == fsm_sm.FSM.q0:
+                    try:
+                        self.fsm.natural_create(c)
+                    except statemap.TransitionUndefinedException:
+                        self.fsm.err()
+                elif b == fsm_sm.FSM.q1:
+                    try:
+                        self.fsm.digit_create(c)
+                    except statemap.TransitionUndefinedException:
+                        self.fsm.err()
+                elif b == fsm_sm.FSM.q3 or b == fsm_sm.FSM.q8:
+                    try:
+                        self.fsm.digit_with_check()
+                    except statemap.TransitionUndefinedException:
+                        self.fsm.err()
+                elif b == fsm_sm.FSM.q5 or b == fsm_sm.FSM.q6 or b == fsm_sm.FSM.q7:
                     try:
                         self.fsm.natural()
                     except statemap.TransitionUndefinedException:
@@ -39,35 +67,54 @@ class Fsm:
                     except statemap.TransitionUndefinedException:
                         self.fsm.err()
             elif 97 <= ord(c) <= 122 or 65 <= ord(c) <= 90:
-                try:
-                    self.fsm.alpha()
-                except statemap.TransitionUndefinedException:
-                    self.fsm.err()
+                if b == fsm_sm.FSM.q3 or b == fsm_sm.FSM.q8:
+                    try:
+                        self.fsm.alpha_with_check()
+                    except statemap.TransitionUndefinedException:
+                        self.fsm.err()
+                else:
+                    try:
+                        self.fsm.alpha()
+                    except statemap.TransitionUndefinedException:
+                        self.fsm.err()
             elif c == separator:
+                self.resetCounter()
                 try:
                     self.fsm.separator()
                 except statemap.TransitionUndefinedException:
                     self.fsm.err()
             elif c == equal:
+                self.resetCounter()
                 try:
                     self.fsm.equal()
                 except statemap.TransitionUndefinedException:
                     self.fsm.err()
             elif c in operations:
+                self.resetCounter()
                 try:
                     self.fsm.operations()
                 except statemap.TransitionUndefinedException:
                     self.fsm.err()
             else:
                 self.fsm.err()
-        if self.fsm.getState() == fsm_sm.FSM.error:
-            self.flag = False
-        else:
+        if self.fsm.getState() != fsm_sm.FSM.error:
             try:
+                # print(self.fsm.getState())
                 self.fsm.EOS()
-                self.flag = True
-                num = int(s)
+                try:
+                    # print("NUM: ", self.s)
+                    self.d[int(self.s)] += 1
+                except KeyError:
+                    self.d[int(self.s)] = 1
             except statemap.TransitionUndefinedException:
                 self.fsm.err()
+        print(string, self.fsm.getState(), len(string), self.count)
         self.fsm.setState(fsm_sm.FSM.q0)
-        return self.flag, num
+        self.resetCounter()
+
+    def displayStatistics(self):
+        if len(self.d) == 0:
+            print("Empty")
+        else:
+            for key in sorted(self.d.keys()):
+                print("{0}: {1}".format(key, self.d[key]))

@@ -20,7 +20,16 @@ class FsmState(statemap.State):
     def alpha(self, fsm):
         self.Default(fsm)
 
+    def alpha_with_check(self, fsm):
+        self.Default(fsm)
+
     def digit(self, fsm):
+        self.Default(fsm)
+
+    def digit_create(self, fsm, c):
+        self.Default(fsm)
+
+    def digit_with_check(self, fsm):
         self.Default(fsm)
 
     def equal(self, fsm):
@@ -30,6 +39,9 @@ class FsmState(statemap.State):
         self.Default(fsm)
 
     def natural(self, fsm):
+        self.Default(fsm)
+
+    def natural_create(self, fsm, c):
         self.Default(fsm)
 
     def operations(self, fsm):
@@ -53,17 +65,27 @@ class FSM_q0(FSM_Default):
         fsm.setState(FSM.error)
         fsm.getState().Entry(fsm)
 
-    def natural(self, fsm):
+    def natural_create(self, fsm, c):
+        ctxt = fsm.getOwner()
         fsm.getState().Exit(fsm)
-        fsm.setState(FSM.q1)
-        fsm.getState().Entry(fsm)
+        fsm.clearState()
+        try:
+            ctxt.createNumber(c)
+        finally:
+            fsm.setState(FSM.q1)
+            fsm.getState().Entry(fsm)
 
 class FSM_q1(FSM_Default):
 
-    def digit(self, fsm):
+    def digit_create(self, fsm, c):
+        ctxt = fsm.getOwner()
         fsm.getState().Exit(fsm)
-        fsm.setState(FSM.q1)
-        fsm.getState().Entry(fsm)
+        fsm.clearState()
+        try:
+            ctxt.createNumber(c)
+        finally:
+            fsm.setState(FSM.q1)
+            fsm.getState().Entry(fsm)
 
     def err(self, fsm):
         fsm.getState().Exit(fsm)
@@ -78,9 +100,14 @@ class FSM_q1(FSM_Default):
 class FSM_q2(FSM_Default):
 
     def alpha(self, fsm):
+        ctxt = fsm.getOwner()
         fsm.getState().Exit(fsm)
-        fsm.setState(FSM.q3)
-        fsm.getState().Entry(fsm)
+        fsm.clearState()
+        try:
+            ctxt.increase()
+        finally:
+            fsm.setState(FSM.q3)
+            fsm.getState().Entry(fsm)
 
     def err(self, fsm):
         fsm.getState().Exit(fsm)
@@ -89,16 +116,48 @@ class FSM_q2(FSM_Default):
 
 class FSM_q3(FSM_Default):
 
-    def alpha(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(FSM.q3)
-        fsm.getState().Entry(fsm)
-
-    def digit(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(FSM.q3)
-        fsm.getState().Entry(fsm)
-
+    def alpha_with_check(self, fsm):
+        ctxt = fsm.getOwner()
+        if ctxt.isValid() :
+            fsm.getState().Exit(fsm)
+            fsm.clearState()
+            try:
+                ctxt.increase()
+            finally:
+                fsm.setState(FSM.q3)
+                fsm.getState().Entry(fsm)
+        elif not ctxt.isValid() :
+            fsm.getState().Exit(fsm)
+            fsm.clearState()
+            try:
+                ctxt.resetCounter()
+            finally:
+                fsm.setState(FSM.error)
+                fsm.getState().Entry(fsm)
+        else:
+            FSM_Default.alpha_with_check(self, fsm)
+        
+    def digit_with_check(self, fsm):
+        ctxt = fsm.getOwner()
+        if ctxt.isValid() :
+            fsm.getState().Exit(fsm)
+            fsm.clearState()
+            try:
+                ctxt.increase()
+            finally:
+                fsm.setState(FSM.q3)
+                fsm.getState().Entry(fsm)
+        elif not ctxt.isValid() :
+            fsm.getState().Exit(fsm)
+            fsm.clearState()
+            try:
+                ctxt.resetCounter()
+            finally:
+                fsm.setState(FSM.error)
+                fsm.getState().Entry(fsm)
+        else:
+            FSM_Default.digit_with_check(self, fsm)
+        
     def equal(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q5)
@@ -134,9 +193,14 @@ class FSM_q4(FSM_Default):
 class FSM_q5(FSM_Default):
 
     def alpha(self, fsm):
+        ctxt = fsm.getOwner()
         fsm.getState().Exit(fsm)
-        fsm.setState(FSM.q8)
-        fsm.getState().Entry(fsm)
+        fsm.clearState()
+        try:
+            ctxt.increase()
+        finally:
+            fsm.setState(FSM.q8)
+            fsm.getState().Entry(fsm)
 
     def err(self, fsm):
         fsm.getState().Exit(fsm)
@@ -161,14 +225,14 @@ class FSM_q5(FSM_Default):
 class FSM_q6(FSM_Default):
 
     def alpha(self, fsm):
+        ctxt = fsm.getOwner()
         fsm.getState().Exit(fsm)
-        fsm.setState(FSM.q8)
-        fsm.getState().Entry(fsm)
-
-    def digit(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(FSM.q8)
-        fsm.getState().Entry(fsm)
+        fsm.clearState()
+        try:
+            ctxt.increase()
+        finally:
+            fsm.setState(FSM.q8)
+            fsm.getState().Entry(fsm)
 
     def err(self, fsm):
         fsm.getState().Exit(fsm)
@@ -209,16 +273,48 @@ class FSM_q8(FSM_Default):
         fsm.setState(FSM.OK)
         fsm.getState().Entry(fsm)
 
-    def alpha(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(FSM.q8)
-        fsm.getState().Entry(fsm)
-
-    def digit(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(FSM.q8)
-        fsm.getState().Entry(fsm)
-
+    def alpha_with_check(self, fsm):
+        ctxt = fsm.getOwner()
+        if ctxt.isValid() :
+            fsm.getState().Exit(fsm)
+            fsm.clearState()
+            try:
+                ctxt.increase()
+            finally:
+                fsm.setState(FSM.q8)
+                fsm.getState().Entry(fsm)
+        elif not ctxt.isValid() :
+            fsm.getState().Exit(fsm)
+            fsm.clearState()
+            try:
+                ctxt.resetCounter()
+            finally:
+                fsm.setState(FSM.error)
+                fsm.getState().Entry(fsm)
+        else:
+            FSM_Default.alpha_with_check(self, fsm)
+        
+    def digit_with_check(self, fsm):
+        ctxt = fsm.getOwner()
+        if ctxt.isValid() :
+            fsm.getState().Exit(fsm)
+            fsm.clearState()
+            try:
+                ctxt.increase()
+            finally:
+                fsm.setState(FSM.q8)
+                fsm.getState().Entry(fsm)
+        elif not ctxt.isValid() :
+            fsm.getState().Exit(fsm)
+            fsm.clearState()
+            try:
+                ctxt.resetCounter()
+            finally:
+                fsm.setState(FSM.error)
+                fsm.getState().Entry(fsm)
+        else:
+            FSM_Default.digit_with_check(self, fsm)
+        
     def err(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.error)

@@ -6,66 +6,111 @@
 // State        Transition      End State       Action(s)
 q0
 {
-                natural           q1              {}
-                err               error             {}
+                natural_create(c: string)
+                    q1              {createNumber(c);}
+                err               error           {}
 }
 q1
 {
-                digit             q1              {}
+                digit_create(c: string)
+                      q1              {createNumber(c);}
                 separator         q2              {}
-                err               error             {}
+                err               error           {}
 
 }
 q2
 {
-                alpha             q3              {}
-                err               error             {}
+                alpha             q3              {increase();}
+                err               error           {}
 
 }
 q3
 {
-                alpha             q3              {}
-                digit             q3              {}
+                alpha_with_check()
+                    [ctxt.isValid()]
+                        q3
+                        {
+                            increase();
+                        }
+                alpha_with_check()
+                    [not ctxt.isValid()]
+                        error
+                        {
+                            resetCounter();
+                        }
+                digit_with_check()
+                    [ctxt.isValid()]
+                        q3
+                        {
+                            increase();
+                        }
+                digit_with_check()
+                    [not ctxt.isValid()]
+                        error
+                        {
+                            resetCounter();
+                        }
                 separator         q4              {}
                 equal             q5              {}
-                err               error             {}
+                err               error           {}
 }
 q4
 {
                 separator         q4              {}
                 equal             q5              {}
-                err               error             {}
+                err               error           {}
 }
 q5
 {
                 separator         q6              {}
                 operations        q7              {}
-                alpha             q8              {}
+                alpha             q8              {increase();}
                 natural           q9              {}
-                err               error             {}
+                err               error           {}
 }
 q6
 {
                separator          q6              {}
                operations         q7              {}
-               alpha              q8              {}
-               digit              q8              {}
+               alpha              q8              {increase();}
                natural            q9              {}
-                err               error             {}
+               err               error            {}
 }
 q7
 {
                natural            q9              {}
-                err               error             {}
+               err               error            {}
 }
 q8
 {
-               alpha              q8              {}
-               digit              q8              {}
+               alpha_with_check()
+                    [ctxt.isValid()]
+                        q8
+                        {
+                            increase();
+                        }
+                alpha_with_check()
+                    [not ctxt.isValid()]
+                        error
+                        {
+                            resetCounter();
+                        }
+                digit_with_check()
+                    [ctxt.isValid()]
+                        q8
+                        {
+                            increase();
+                        }
+                digit_with_check()
+                    [not ctxt.isValid()]
+                        error
+                        {
+                            resetCounter();
+                        }
                operations         q5              {}
                separator          q10             {}
                EOS                OK              {}
-                err               error             {}
+               err               error            {}
 }
 q9
 {
@@ -73,14 +118,14 @@ q9
                digit              q9              {}
                EOS                OK              {}
                separator          q10             {}
-                err               error             {}
+               err               error            {}
 }
 q10
 {
                separator          q10             {}
                EOS                OK              {}
                operations         q5              {}
-                err               error             {}
+               err               error            {}
 }
 OK
 {
