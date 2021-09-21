@@ -37,7 +37,6 @@ class Fsm:
     def parse(self, string):
         for c in string:
             b = self.fsm.getState()
-            # print(b, c)
             if b == fsm_sm.FSM.error:
                 break
             if c in digit:
@@ -99,16 +98,13 @@ class Fsm:
                 self.fsm.err()
         if self.fsm.getState() != fsm_sm.FSM.error:
             try:
-                # print(self.fsm.getState())
                 self.fsm.EOS()
                 try:
-                    # print("NUM: ", self.s)
                     self.d[int(self.s)] += 1
                 except KeyError:
                     self.d[int(self.s)] = 1
             except statemap.TransitionUndefinedException:
                 self.fsm.err()
-        print(string, self.fsm.getState(), len(string), self.count)
         self.fsm.setState(fsm_sm.FSM.q0)
         self.resetCounter()
 
