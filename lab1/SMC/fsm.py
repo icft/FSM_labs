@@ -28,6 +28,9 @@ class Fsm:
         else:
             return False
 
+    def resetStr(self):
+        self.s = ""
+
     def resetCounter(self):
         self.count = 0
 
@@ -107,6 +110,7 @@ class Fsm:
                 self.fsm.err()
         self.fsm.setState(fsm_sm.FSM.q0)
         self.resetCounter()
+        self.resetStr()
 
     def displayStatistics(self):
         if len(self.d) == 0:
