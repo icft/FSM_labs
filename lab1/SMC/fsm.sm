@@ -7,13 +7,13 @@
 q0
 {
                 natural_create(c: string)
-                    q1              {createNumber(c);}
+                    q1              {createNumber();}
                 err               error           {}
 }
 q1
 {
                 digit_create(c: string)
-                      q1              {createNumber(c);}
+                      q1              {createNumber();}
                 separator         q2              {}
                 err               error           {}
 
@@ -63,7 +63,14 @@ q4
 q5
 {
                 separator         q6              {}
-                operations        q7              {}
+                minus_check()
+                       [ctxt.IsMinus()]
+                       q7
+                       {}
+                minus_check()
+                       [not ctxt.IsMinus()]
+                       error
+                       {}
                 alpha             q8              {increase();}
                 natural           q9              {}
                 err               error           {}
@@ -71,7 +78,14 @@ q5
 q6
 {
                separator          q6              {}
-               operations         q7              {}
+               minus_check()
+                       [ctxt.IsMinus()]
+                       q7
+                       {}
+               minus_check()
+                       [not ctxt.IsMinus()]
+                       error
+                       {}
                alpha              q8              {increase();}
                natural            q9              {}
                err               error            {}

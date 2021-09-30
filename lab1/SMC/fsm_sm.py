@@ -38,6 +38,9 @@ class FsmState(statemap.State):
     def err(self, fsm):
         self.Default(fsm)
 
+    def minus_check(self, fsm):
+        self.Default(fsm)
+
     def natural(self, fsm):
         self.Default(fsm)
 
@@ -70,7 +73,7 @@ class FSM_q0(FSM_Default):
         fsm.getState().Exit(fsm)
         fsm.clearState()
         try:
-            ctxt.createNumber(c)
+            ctxt.createNumber()
         finally:
             fsm.setState(FSM.q1)
             fsm.getState().Entry(fsm)
@@ -82,7 +85,7 @@ class FSM_q1(FSM_Default):
         fsm.getState().Exit(fsm)
         fsm.clearState()
         try:
-            ctxt.createNumber(c)
+            ctxt.createNumber()
         finally:
             fsm.setState(FSM.q1)
             fsm.getState().Entry(fsm)
@@ -207,14 +210,26 @@ class FSM_q5(FSM_Default):
         fsm.setState(FSM.error)
         fsm.getState().Entry(fsm)
 
+    def minus_check(self, fsm):
+        ctxt = fsm.getOwner()
+        if ctxt.IsMinus() :
+            fsm.getState().Exit(fsm)
+            # No actions.
+            pass
+            fsm.setState(FSM.q7)
+            fsm.getState().Entry(fsm)
+        elif not ctxt.IsMinus() :
+            fsm.getState().Exit(fsm)
+            # No actions.
+            pass
+            fsm.setState(FSM.error)
+            fsm.getState().Entry(fsm)
+        else:
+            FSM_Default.minus_check(self, fsm)
+        
     def natural(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q9)
-        fsm.getState().Entry(fsm)
-
-    def operations(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(FSM.q7)
         fsm.getState().Entry(fsm)
 
     def separator(self, fsm):
@@ -239,14 +254,26 @@ class FSM_q6(FSM_Default):
         fsm.setState(FSM.error)
         fsm.getState().Entry(fsm)
 
+    def minus_check(self, fsm):
+        ctxt = fsm.getOwner()
+        if ctxt.IsMinus() :
+            fsm.getState().Exit(fsm)
+            # No actions.
+            pass
+            fsm.setState(FSM.q7)
+            fsm.getState().Entry(fsm)
+        elif not ctxt.IsMinus() :
+            fsm.getState().Exit(fsm)
+            # No actions.
+            pass
+            fsm.setState(FSM.error)
+            fsm.getState().Entry(fsm)
+        else:
+            FSM_Default.minus_check(self, fsm)
+        
     def natural(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(FSM.q9)
-        fsm.getState().Entry(fsm)
-
-    def operations(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(FSM.q7)
         fsm.getState().Entry(fsm)
 
     def separator(self, fsm):

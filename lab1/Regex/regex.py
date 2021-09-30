@@ -9,8 +9,9 @@ def check(a):
     for j in range(a):
         string = input()
         pattern = re.compile(sample)
-        if pattern.match(string):
-            num = int(re.findall(r'\w+', string)[0])
+        m = pattern.match(string)
+        if m:
+            num = int(m.group(1))
             try:
                 d[num] += 1
             except KeyError:

@@ -18,15 +18,19 @@ class Fsm:
         self.s = ""
         self.count = 0
         self.fsm.enterStartState()
+        self.curChar = ""
 
-    def createNumber(self, c):
-        self.s += c
+    def createNumber(self):
+        self.s += self.curChar
 
     def isValid(self):
         if self.count <= 16:
             return True
         else:
             return False
+
+    def IsMinus(self):
+        return self.curChar == "-"
 
     def resetStr(self):
         self.s = ""
@@ -40,6 +44,7 @@ class Fsm:
     def parse(self, string):
         for c in string:
             b = self.fsm.getState()
+            self.curChar = c
             if b == fsm_sm.FSM.error:
                 break
             if c in digit:
@@ -93,10 +98,16 @@ class Fsm:
                     self.fsm.err()
             elif c in operations:
                 self.resetCounter()
-                try:
-                    self.fsm.operations()
-                except statemap.TransitionUndefinedException:
-                    self.fsm.err()
+                if b == fsm_sm.FSM.q5 or b == fsm_sm.FSM.q6:
+                    try:
+                        self.fsm.minus_check()
+                    except statemap.TransitionUndefinedException:
+                        self.fsm.err()
+                else:
+                    try:
+                        self.fsm.operations()
+                    except statemap.TransitionUndefinedException:
+                        self.fsm.err()
             else:
                 self.fsm.err()
         if self.fsm.getState() != fsm_sm.FSM.error:
