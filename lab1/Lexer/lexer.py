@@ -58,9 +58,9 @@ def check(a):
         f2 = len(b) == 2 and b[0].type == "NUM" and b[1].type == "LPART"
         if f1 or f2:
             try:
-                d[int(a[0].value)] += 1
+                d[int(b[0].value)] += 1
             except KeyError:
-                d[int(a[0].value)] = 1
+                d[int(b[0].value)] = 1
 
 
 def start():
