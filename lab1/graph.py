@@ -24,7 +24,7 @@ def start():
         d.clear()
     plt.legend()
     # plt.savefig("compare_1")
-    plt.savefig("compare_2")
+    plt.savefig("compare_3")
 
 
 if __name__ == "__main__":
