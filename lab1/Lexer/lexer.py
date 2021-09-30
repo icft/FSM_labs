@@ -52,7 +52,7 @@ def check(a):
                 b.append(tok)
             except lex.LexError:
                 break
-        print(b)
+#        print(b)
         f1 = len(b) == 3 and b[0].type == "NUM" and\
              b[1].type == "LPART" and b[2].type == "RPART"
         f2 = len(b) == 2 and b[0].type == "NUM" and b[1].type == "LPART"
