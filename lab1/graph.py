@@ -23,7 +23,8 @@ def start():
         plt.plot(d.keys(), d.values(), label=legend[i])
         d.clear()
     plt.legend()
-    plt.savefig("comparison")
+    # plt.savefig("compare_1")
+    plt.savefig("compare_2")
 
 
 if __name__ == "__main__":
