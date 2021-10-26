@@ -1,11 +1,14 @@
-
 package AST
 
-import "unicode"
+import (
+	"fmt"
+	"unicode"
+)
 
-var ops = []rune{'(', ')', '\\', '{', '}', '|', '+', '#'}
+var ops = []string{"(", ")", "\\", "{", "}", "|", "+", "#", "."}
+var numberGroups []int
 
-func Find(s rune, ops []rune) bool {
+func Find(s string) bool {
 	for i:=0; i < len(ops); i++ {
 		if s == ops[i] {
 			return true
@@ -29,8 +32,8 @@ func AddConcatenations(regex string) (NewRegex string) {
 		//((->(.(
 		//))->).)
 		//)#->).#
-		var Flag = Find(rune(regex[i]), ops)
-		var Check = Find(rune(regex[i+1]), ops)
+		var Flag = Find(string(regex[i]))
+		var Check = Find(string(regex[i+1]))
 		if !Flag {
 			if Check {
 				if regex[i+1] == '(' {
@@ -51,11 +54,11 @@ func AddConcatenations(regex string) (NewRegex string) {
 						NewRegex += string(regex[i])
 						i++
 					}
-					NewRegex += string(regex[i]) + "."
+					NewRegex += string(regex[i])
 					i++
 				} else if regex[i+1] == '#' {
-					NewRegex += string(regex[i]) + "." + string(regex[i+1]) + string(regex[i+2]) + "."
-					i += 3
+					NewRegex += string(regex[i]) + "."
+					i ++
 				} else {
 					NewRegex += string(regex[i])
 					i++
@@ -66,7 +69,7 @@ func AddConcatenations(regex string) (NewRegex string) {
 			}
 		} else {
 			if regex[i] == ')' {
-				if  regex[i+1] == '(' || !Find(rune(regex[i+1]), ops) {
+				if  regex[i+1] == '(' || !Find(string(regex[i+1])) {
 					NewRegex += string(regex[i]) + "."
 					i++
 				} else if regex[i+1] == '#' {
@@ -79,6 +82,9 @@ func AddConcatenations(regex string) (NewRegex string) {
 			} else if regex[i] == '+' {
 				NewRegex += string(regex[i]) + "."
 				i++
+			} else if regex[i] == '#' {
+				NewRegex += string(regex[i]) + string(regex[i+1])+"."
+				i+=2
 			} else {
 				NewRegex += string(regex[i])
 				i++
@@ -194,10 +200,209 @@ func CreateTokens(Regex string) (tokens []string) {
 	return
 }
 
-func Pop(stack []string) (string, []string) {
-	return stack[len(stack)-1], stack[:len(stack)-1]
+func isDigit(str string) bool {
+	for i := range str {
+		if str[i] < '0' || str[i] > '9' {
+			return false
+		}
+	}
+	return true
 }
 
-/*func CreateRPN(tokens []string) (tokensRPN []string) {
+func CreateNodes(tokens []string) (nodes []*Node) {
+	var i = 0
+	for i < len(tokens) {
+		var tok = tokens[i]
+		if tok == "(" || tok == ")" {
+			nodes = append(nodes, &Node{Type: Bracket, Val: tok})
+			i++
+		} else if len(tok) == 1 && !Find(tok) && tokens[i+1] != ":" {
+			nodes = append(nodes, &Node{Type:LeafNode, Val:tok})
+			i++
+		} else if len(tok) == 1 && Find(tok) && tokens[i+1] != ":" {
+			if tok == "." {
+				nodes = append(nodes, &Node{Type:Concat, Val: tok})
+			} else if tok == "|" {
+				nodes = append(nodes, &Node{Type:Or, Val: tok})
+			} else if tok == "." {
+				nodes = append(nodes, &Node{Type:Concat, Val: tok})
+			} else if tok == "+" {
+				nodes = append(nodes, &Node{Type:Plus, Val: tok})
+			} else if tok == "." {
+				nodes = append(nodes, &Node{Type:Concat, Val: tok})
+			}
+			i++
+		} else {
+			if tok[0] == '#' {
+				nodes = append(nodes, &Node{Type: Sharp, Val: string(tok[1])})
+				i++
+			} else if tok[0] == '\\' {
+				nodes = append(nodes, &Node{Type: Shield, Val: string(tok[1:])})
+				i++
+			} else if tok[0] == '{' {
+				nodes = append(nodes, &Node{Type: Repeat, Val: tok[1 : len(tok)-1]})
+				i++
+			} else if isDigit(tok) {
+				nodes = append(nodes, &Node{Type: Group, Val: tok})
+				i += 2
+			}
+		}
+	}
+	return nodes
+}
 
-}*/
+func ClosestBrackets(tokens []*Node) (first int, second int) {
+	first = 0
+	second = len(tokens)-1
+	var currF = 0
+	var currS = 0
+	var isGroup = false
+	var sum = 0
+	var priority = true
+	for i, tok := range tokens {
+		if tok.Val == "(" && tokens[i+2].Val != ":" {
+			currF = i
+			priority = true
+		} else if tok.Val == "(" && tokens[i+2].Val == ":" && priority {
+			isGroup = true
+			sum++
+		} else if tok.Val == ")" {
+			if priority && !isGroup {
+				currS = i
+				if currS-currF < second-first {
+					second = currS
+					first = currF
+				}
+				priority = false
+			} else if priority && isGroup {
+				sum--
+				if sum <= 0 {
+					isGroup = false
+				}
+			}
+		}
+	}
+	return
+}
+
+func CreateSubtree(nodes []*Node, first int, second int) *Node {
+	var currNode *Node
+	if nodes[first+1].Type == Group {
+		
+	} else {
+		var i = first+1
+		second -= 1
+		//fmt.Println(i, second)
+		for i <= second {
+			if nodes[i].Type == Plus {
+				nodes[i].Left = nodes[i-1]
+				nodes[i].Right = nil
+				nodes[i-1].Parent = nodes[i]
+				currNode = nodes[i]
+				copy(nodes[i-1:], nodes[i:])
+				nodes = nodes[:len(nodes)-1]
+				Print(nodes)
+				second--
+				i--
+			}
+			i++
+		}
+		i = first + 1
+		//fmt.Println(i, second)
+		for i <= second {
+			if nodes[i].Type == Repeat {
+				nodes[i].Left = nodes[i-1]
+				nodes[i].Right = nil
+				nodes[i-1].Parent = nodes[i]
+				currNode = nodes[i]
+				copy(nodes[i-1:], nodes[i:])
+				nodes = nodes[:len(nodes)-1]
+				Print(nodes)
+				second--
+				i--
+			}
+			i++
+		}
+		i = first+1
+		//fmt.Println(i, second)
+		for i <= second-1 {
+			if i >= first+2 {
+				if nodes[i].Type == Concat && nodes[i].Left == nil && nodes[i].Right == nil {
+					//fmt.Println(i)
+					nodes[i].Left = nodes[i-1]
+					nodes[i].Right = nodes[i+1]
+					nodes[i-1].Parent = nodes[i]
+					nodes[i+1].Parent = nodes[i]
+					currNode = nodes[i]
+					copy(nodes[i:], nodes[i+2:])
+					nodes[i-1] = currNode
+					nodes = nodes[:len(nodes)-2]
+					Print(nodes)
+					i -=2
+					second = second-2
+				}
+				i++
+			}
+			i++
+		}
+		i = first+1
+		for i <= second-1 {
+			if i >= first+2 {
+				if nodes[i].Type == Or && nodes[i].Left == nil && nodes[i].Right == nil {
+					//fmt.Println(i)
+					nodes[i].Left = nodes[i-1]
+					nodes[i].Right = nodes[i+1]
+					nodes[i-1].Parent = nodes[i]
+					nodes[i+1].Parent = nodes[i]
+					currNode = nodes[i]
+					copy(nodes[i:], nodes[i+2:])
+					nodes[i-1] = currNode
+					nodes = nodes[:len(nodes)-2]
+					Print(nodes)
+					i -=2
+					second = second-2
+				}
+				i++
+			}
+			i++
+		}
+		copy(nodes[first+1:], nodes[second+1:])
+		nodes[first] = currNode
+		nodes = nodes[:len(nodes)-2]
+		Print(nodes)
+	}
+	return currNode
+}
+
+func Print(nodes []*Node) {
+	for i := 0; i < len(nodes); i++ {
+		if nodes[i].Type == 1 {
+			fmt.Printf("concat ")
+		}
+		if nodes[i].Type == 2 {
+			fmt.Printf("or ")
+		}
+		if nodes[i].Type == 3 {
+			fmt.Printf("plus ")
+		}
+		if nodes[i].Type == 4 {
+			fmt.Printf("sharp ")
+		}
+		if nodes[i].Type == 5 {
+			fmt.Printf("group ")
+		}
+		if nodes[i].Type == 6 {
+			fmt.Printf("shield ")
+		}
+		if nodes[i].Type == 7 {
+			fmt.Printf("repeat ")
+		}
+		if nodes[i].Type == 8 {
+			fmt.Printf("leaf ")
+		}
+		if nodes[i].Type == 9 {
+			fmt.Printf("bracket ")
+		}
+	}
+	fmt.Println()
+}
