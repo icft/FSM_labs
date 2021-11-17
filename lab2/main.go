@@ -1,25 +1,37 @@
 package main
 
+import (
+	"fmt"
+	"lab2/dfa"
+	"lab2/tree"
+)
+
 func main() {
-	//var s = "(#|((6)2)b{1,2}a\\32(5:mo))"
-	//var s = "(#|b+ca|b{1,2})"
-	//var s = "(56:r|ek#|b{1,2})"
-	/*//var s = "((6:dfff)\\6c(ab|c))"
-	var s = "(b|ca+#|((36)2))"
+	var s = "(((a|b)abb)$)"
+	//var s = "(a|b+.(7:fg)\\7b{1,2}j)"
 	var str = tree.AddConcatenations(s)
 	fmt.Println(str)
-	var tokens = tree.CreateTokens(str)
+	var d = dfa.Compile(s)
+	dfa.Minimization(d)
+//	dfa.Search(s, "fepfk")
+	/*var regex = tree.ReplaceRepeat(str)
+	fmt.Println(regex)
+	var tokens = tree.CreateTokens(regex)
 	fmt.Println(tokens)
-	var nodes = tree.CreateNodes(tokens)
-	var first, second = tree.ClosestBrackets(nodes)
-	for second-first > 1 {
-		fmt.Println(first, second)
-		tree.Print(nodes)
-		copy(nodes[first:], nodes[second+1:])
-		nodes = nodes[:len(nodes)-(second-first+1)]
-		tree.Print(nodes)
-		fmt.Println()
-		first, second = tree.ClosestBrackets(nodes)
-	}*/
-	//nodes := AST.CreateNodes(tokens)
+	*///var root = tree.CreateTree(s)
+	/*fmt.Printf("\n\n\n")
+	tree.PrintTree(root)
+	var a []int = nil
+	var followpos [][]int
+	for i := 0; i < len(tree.ID); i++ {
+		followpos = append(followpos, a)
+	}
+	tree.FindFollowPos(root, followpos)
+	//fmt.Println(tree.FollowPos)
+	fmt.Printf("\n\n\n\n")*/
+	//fmt.Println(root.FirstPos)
+	//var avtomata = dfa.InitDFA(root, tree.FollowPos, root.FirstPos)
+	//var state = dfa.Convert(avtomata, root)
+	//fmt.Println("\n", "\n", state, "\n\n")
+	//dfa.Print(avtomata)
 }

@@ -1,8 +1,10 @@
 package tree
 
 import (
-	"errors"
 	"fmt"
+	"sort"
+	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -10,7 +12,7 @@ var ops = []string{"(", ")", "\\", "{", "}", "|", "+", "#", "."}
 var id = 1
 
 func Find(s string) bool {
-	for i:=0; i < len(ops); i++ {
+	for i := 0; i < len(ops); i++ {
 		if s == ops[i] {
 			return true
 		}
@@ -18,8 +20,8 @@ func Find(s string) bool {
 	return false
 }
 
-func AddConcatenations(regex string) (NewRegex string) {
-	NewRegex = ""
+func AddConcatenations(regex string) (newRegex string) {
+	newRegex = ""
 	var i = 0
 	for i < len(regex)-1 {
 		//ab->a.b
@@ -38,79 +40,96 @@ func AddConcatenations(regex string) (NewRegex string) {
 		if !Flag {
 			if Check {
 				if regex[i+1] == '(' {
-					NewRegex += string(regex[i]) + "."
+					newRegex += string(regex[i]) + "."
 					i++
 				} else if regex[i+1] == '\\' {
-					NewRegex += string(regex[i]) + "."
+					newRegex += string(regex[i]) + "."
 					i++
-					NewRegex += string(regex[i])
+					newRegex += string(regex[i])
 					i++
 					for unicode.IsDigit(rune(regex[i])) {
-						NewRegex += string(regex[i])
-						i ++
+						newRegex += string(regex[i])
+						i++
 					}
-					NewRegex += "."
+					newRegex += "."
 				} else if regex[i+1] == '{' {
 					for regex[i] != '}' {
-						NewRegex += string(regex[i])
+						newRegex += string(regex[i])
 						i++
 					}
 					if regex[i+1] != ')' {
-						NewRegex += string(regex[i]) + "."
+						newRegex += string(regex[i]) + "."
 					} else {
-						NewRegex += string(regex[i])
+						newRegex += string(regex[i])
 					}
 					i++
 				} else if regex[i+1] == '#' {
-					NewRegex += string(regex[i]) + "."
+					newRegex += string(regex[i]) + "."
 					i++
 				} else {
-					NewRegex += string(regex[i])
+					newRegex += string(regex[i])
 					i++
 				}
 			} else {
-				NewRegex += string(regex[i]) + "."
+				newRegex += string(regex[i]) + "."
 				i++
 			}
 		} else {
 			if regex[i] == ')' {
 				if regex[i+1] == '(' || !Find(string(regex[i+1])) {
-					NewRegex += string(regex[i]) + "."
+					newRegex += string(regex[i]) + "."
 					i++
 				} else if regex[i+1] == '#' || regex[i+1] == '\\' {
-					NewRegex += string(regex[i]) + "."
+					newRegex += string(regex[i]) + "."
+					i++
+				} else if regex[i+1] == '{' {
+					newRegex += string(regex[i])
+					i++
+					for regex[i] != '}' {
+						newRegex += string(regex[i])
+						i++
+					}
+					if regex[i+1] != ')' {
+						newRegex += string(regex[i]) + "."
+					} else {
+						newRegex += string(regex[i])
+					}
 					i++
 				} else {
-					NewRegex += string(regex[i])
+					newRegex += string(regex[i])
 					i++
 				}
 			} else if regex[i] == '+' {
-				NewRegex += string(regex[i]) + "."
-				i++
+				if regex[i+1] == '.' {
+					newRegex += string(regex[i]) + "."
+					i+=2
+				} else {
+					newRegex += string(regex[i]) + "."
+				}
 			} else if regex[i] == '#' {
-				NewRegex += string(regex[i]) + string(regex[i+1]) + "."
+				newRegex += string(regex[i]) + string(regex[i+1]) + "."
 				i += 2
 			} else if regex[i] == '}' {
 				if regex[i+1] != ')' {
-					NewRegex += string(regex[i]) + "."
+					newRegex += string(regex[i]) + "."
 				} else {
-					NewRegex += string(regex[i])
+					newRegex += string(regex[i])
 				}
-			} else  {
-				NewRegex += string(regex[i])
+			} else {
+				newRegex += string(regex[i])
 				i++
 			}
 		}
 	}
-	NewRegex += string(regex[len(regex)-1])
-	var CopyNewRegex string
+	newRegex += string(regex[len(regex)-1])
+	var copyNewRegex string
 	var minus = 0
-	for _, c := range NewRegex {
-		CopyNewRegex += string(c)
+	for _, c := range newRegex {
+		copyNewRegex += string(c)
 	}
 	var Bracket = false
 	var IndBracket = -1
-	for ind, char := range CopyNewRegex {
+	for ind, char := range copyNewRegex {
 		if char == '(' {
 			Bracket = true
 			IndBracket = ind
@@ -119,28 +138,108 @@ func AddConcatenations(regex string) (NewRegex string) {
 			Bracket = false
 			IndBracket = -1
 		}
-		if char == ':' && Bracket && (ind - IndBracket) > 0 {
-			for j := IndBracket+-minus; j < ind-1-minus; j++ {
-				if NewRegex[j] == '.' {
-					NewRegex = NewRegex[:j]+NewRegex[j+1:]
+		if char == ':' && Bracket && (ind-IndBracket) > 0 {
+			for j := IndBracket + -minus; j < ind-1-minus; j++ {
+				if newRegex[j] == '.' {
+					newRegex = newRegex[:j] + newRegex[j+1:]
 					minus++
 				}
 			}
-			NewRegex = NewRegex[:ind-minus-1]+":"+NewRegex[ind-minus+2:]
+			newRegex = newRegex[:ind-minus-1] + ":" + newRegex[ind-minus+2:]
 			minus += 2
 		}
 	}
 	return
 }
 
+func ReplaceRepeat(regex string) string {
+	var i = 0
+	var repeat string = ""
+	var add string = ""
+	var start, end int = -1, -1
+	var endRepeated = -1
+	var repeatBracket = false
+	for i < len(regex) {
+		if i > 1 && regex[i-1] == '(' {
+			start = i - 1
+			repeat = ""
+			for regex[i] != ')' {
+				repeat += string(regex[i])
+				i++
+			}
+		}
+		if regex[i] == '{' {
+			endRepeated = i - 1
+			if regex[i-1] == ')' {
+				repeatBracket = true
+			}
+			i = i + 1
+			var x, y string = "", ""
+			for regex[i] != ',' {
+				x += string(regex[i])
+				i++
+			}
+			i++
+			for regex[i] != '}' {
+				y += string(regex[i])
+				i++
+			}
+			end = i
+			add = ""
+			if !repeatBracket {
+				if y == "" {
+					var IntX, _ = strconv.Atoi(x)
+					add += strings.Repeat(string(regex[endRepeated])+".", IntX-1)
+					add = add[:len(add)-1]
+					add += "+"
+				} else {
+					var IntX, _ = strconv.Atoi(x)
+					var IntY, _ = strconv.Atoi(y)
+					for j := 0; j <= IntY-IntX; j++ {
+						add += strings.Repeat(string(regex[endRepeated])+".", IntX+j)
+						add = add[:len(add)-1]
+						if j != IntY-IntX {
+							add += "|"
+						}
+					}
+				}
+				regex = regex[:endRepeated] + "(" + add + ")" + regex[end+1:]
+			} else {
+				if y == "" {
+					var IntX, _ = strconv.Atoi(x)
+					add += strings.Repeat(repeat+".", IntX-2)
+					add = add[:len(add)-1]
+					add += ".(" + repeat + ")+"
+				} else {
+					var IntX, _ = strconv.Atoi(x)
+					var IntY, _ = strconv.Atoi(y)
+					for j := 0; j <= IntY-IntX; j++ {
+						add += strings.Repeat(repeat+".", IntX+j)
+						add = add[:len(add)-1]
+						if j != IntY-IntX {
+							add += "|"
+						}
+					}
+				}
+				regex = regex[:start] + "(" + add + ")" + regex[end+1:]
+			}
+		}
+		i++
+	}
+	return regex
+}
+
 func CreateTokens(Regex string) (tokens []string) {
 	var c = ""
 	var FigBr = false
-	var Shield = false
+	var shield = false
 	for _, r := range Regex {
 		if r == '(' || r == ')' && !FigBr {
+			if c != "" {
+				tokens = append(tokens, c)
+			}
 			tokens = append(tokens, string(r))
-		} else if (r == '.' || r == '|' || r == '+') && !FigBr && !Shield {
+		} else if (r == '.' || r == '|' || r == '+') && !FigBr && !shield {
 			tokens = append(tokens, string(r))
 		} else if r == '{' {
 			FigBr = true
@@ -154,17 +253,17 @@ func CreateTokens(Regex string) (tokens []string) {
 			c += string(r)
 		} else if r == '\\' {
 			c += string(r)
-			Shield = true
-		} else if Shield {
+			shield = true
+		} else if shield {
 			if r == '.' {
 				tokens = append(tokens, c)
 				tokens = append(tokens, string(r))
 				c = ""
-				Shield = false
+				shield = false
 			} else {
 				c += string(r)
 			}
-		} else if  !FigBr {
+		} else if !FigBr {
 			tokens = append(tokens, string(r))
 		}
 	}
@@ -184,12 +283,12 @@ func CreateTokens(Regex string) (tokens []string) {
 			Bracket = false
 			indBracket = -1
 		}
-		if char == ":" && Bracket && (ind - indBracket) > 0 {
+		if char == ":" && Bracket && (ind-indBracket) > 0 {
 			var s = ""
-			var Ind = ind-minus
-			var IndBracket = indBracket-minus
-			var shift = 0-minus
-			for j := IndBracket+1; j < Ind; j++ {
+			var Ind = ind - minus
+			var IndBracket = indBracket - minus
+			var shift = 0 - minus
+			for j := IndBracket + 1; j < Ind; j++ {
 				s += tokens[j]
 				minus++
 			}
@@ -211,30 +310,19 @@ func isDigit(str string) bool {
 	return true
 }
 
-func CreateNodes(tokens []string) (nodes []*Node) {
+func CreateNodes(tokens []string, idMap map[int]string, leafNodes map[string][]int) (nodes []*Node) {
 	var i = 0
+	fmt.Println(tokens)
 	for i < len(tokens) {
 		var tok = tokens[i]
 		if tok == "(" || tok == ")" {
 			nodes = append(nodes, &Node{Type: Bracket, Val: tok})
 			i++
 		} else if len(tok) == 1 && !Find(tok) && tokens[i+1] != ":" {
+			var n *Node
 			if tok != "^" {
-				nodes = append(nodes, &Node{
-					Id: 	  id,
-					Parent:   nil,
-					Left:     nil,
-					Right:    nil,
-					Type:     LeafNode,
-					Val:      tok,
-					FirstPos: []int{id},
-					LastPos:  []int{id},
-					Nullable: true,
-				})
-				id++
-			} else {
-				nodes = append(nodes, &Node{
-					Id: 	  id,
+				n = &Node{
+					Id:       id,
 					Parent:   nil,
 					Left:     nil,
 					Right:    nil,
@@ -243,14 +331,37 @@ func CreateNodes(tokens []string) (nodes []*Node) {
 					FirstPos: []int{id},
 					LastPos:  []int{id},
 					Nullable: false,
-				})
-				id++
+				}
+				idMap[id] = tok
+			} else {
+				n = &Node{
+					Id:       id,
+					Parent:   nil,
+					Left:     nil,
+					Right:    nil,
+					Type:     LeafNode,
+					Val:      tok,
+					FirstPos: []int{id},
+					LastPos:  []int{id},
+					Nullable: true,
+				}
+				idMap[id] = tok
 			}
+			id++
+			if n.Val != "^" && n.Val != "$" {
+				_, ok := leafNodes[n.Val]
+				if ok {
+					leafNodes[n.Val] = append(leafNodes[n.Val], n.Id)
+				} else {
+					leafNodes[n.Val] = []int{n.Id}
+				}
+			}
+			nodes = append(nodes, n)
 			i++
 		} else if len(tok) == 1 && Find(tok) && tokens[i+1] != ":" {
 			if tok == "." {
 				nodes = append(nodes, &Node{
-					Id: 	  -1,
+					Id:       -1,
 					Parent:   nil,
 					Left:     nil,
 					Right:    nil,
@@ -260,9 +371,10 @@ func CreateNodes(tokens []string) (nodes []*Node) {
 					LastPos:  nil,
 					Nullable: false,
 				})
+				i++
 			} else if tok == "|" {
 				nodes = append(nodes, &Node{
-					Id: 	  -1,
+					Id:       -1,
 					Parent:   nil,
 					Left:     nil,
 					Right:    nil,
@@ -272,21 +384,47 @@ func CreateNodes(tokens []string) (nodes []*Node) {
 					LastPos:  nil,
 					Nullable: false,
 				})
+				i++
 			} else if tok == "+" {
 				nodes = append(nodes, &Node{
-					Id: 	  -1,
+					Id:       -1,
 					Parent:   nil,
 					Left:     nil,
 					Right:    nil,
-					Type:     Plus,
-					Val:      tok,
+					Type:     Concat,
+					Val:      ".",
 					FirstPos: nil,
 					LastPos:  nil,
 					Nullable: false,
 				})
+				nodes = append(nodes, &Node{
+					Id:       id,
+					Parent:   nil,
+					Left:     nil,
+					Right:    nil,
+					Type:     LeafNode,
+					Val:      tokens[i-1],
+					FirstPos: []int{id},
+					LastPos:  []int{id},
+					Nullable: false,
+				})
+				idMap[id] = tok
+				id++
+				nodes = append(nodes, &Node{
+					Id:       -1,
+					Parent:   nil,
+					Left:     nil,
+					Right:    nil,
+					Type:     Star,
+					Val:      "*",
+					FirstPos: nil,
+					LastPos:  nil,
+					Nullable: false,
+				})
+				i++
 			} else if tok == "#" {
 				nodes = append(nodes, &Node{
-					Id: 	  -1,
+					Id:       -1,
 					Parent:   nil,
 					Left:     nil,
 					Right:    nil,
@@ -296,12 +434,26 @@ func CreateNodes(tokens []string) (nodes []*Node) {
 					LastPos:  nil,
 					Nullable: false,
 				})
+				nodes = append(nodes, &Node{
+					Id:       id,
+					Parent:   nil,
+					Left:     nil,
+					Right:    nil,
+					Type:     LeafNode,
+					Val:      tokens[i+1],
+					FirstPos: []int{id},
+					LastPos:  []int{id},
+					Nullable: false,
+				})
+				idMap[id] = tokens[i+1]
+				leafNodes[tokens[i+1]] = append(leafNodes[tokens[i+1]], id)
+				id++
+				i += 2
 			}
-			i++
 		} else {
 			if tok[0] == '\\' {
 				nodes = append(nodes, &Node{
-					Id: 	  -1,
+					Id:       -1,
 					Parent:   nil,
 					Left:     nil,
 					Right:    nil,
@@ -312,22 +464,9 @@ func CreateNodes(tokens []string) (nodes []*Node) {
 					Nullable: false,
 				})
 				i++
-			} else if tok[0] == '{' {
-				nodes = append(nodes, &Node{
-					Id: 	  -1,
-					Parent:   nil,
-					Left:     nil,
-					Right:    nil,
-					Type:     Repeat,
-					Val:      tok[1: len(tok)-1],
-					FirstPos: nil,
-					LastPos:  nil,
-					Nullable: false,
-				})
-				i++
 			} else if isDigit(tok) {
 				nodes = append(nodes, &Node{
-					Id: 	  -1,
+					Id:       -1,
 					Parent:   nil,
 					Left:     nil,
 					Right:    nil,
@@ -341,12 +480,25 @@ func CreateNodes(tokens []string) (nodes []*Node) {
 			}
 		}
 	}
+	/*var n *Node
+	n = &Node{
+		Id:       id,
+		Parent:   nil,
+		Left:     nil,
+		Right:    nil,
+		Type:     LeafNode,
+		Val:      "$",
+		FirstPos: []int{id},
+		LastPos:  []int{id},
+		Nullable: false,
+	}
+	nodes = append(nodes, n)*/
 	return nodes
 }
 
 func ClosestBrackets(tokens []*Node) (first int, second int) {
 	first = 0
-	second = len(tokens)-1
+	second = len(tokens) - 1
 	var currF = 0
 	var currS = 0
 	var priority = true
@@ -382,31 +534,24 @@ func Merge(first []int, second []int) []int {
 	var res []int
 	res = append(res, first...)
 	for _, c := range second {
-		if FindMerge(first, c) {
+		if !FindMerge(first, c) {
 			res = append(res, c)
 		}
 	}
+	sort.Ints(res)
 	return res
 }
 
 var m = make(map[string]*Node)
 
-func CreateSubtree(nodes []*Node, first int, second int) ([]*Node, error) {
+func CreateSubtree(nodes []*Node, first int, second int, idMap map[int]string) []*Node {
 	var currNode *Node
 	var i int
 	_, ok := m[nodes[first+1].Val]
-	var err error = nil
-	/*fmt.Println(err)
-	if !err {
-		fmt.Println(m[nodes[first+1].Val])
-	} else {
-		fmt.Println(err)
-	}*/
-	//fmt.Println(nodes[first+1].Type)
 	if nodes[first+1].Type == Group && !ok {
-		i = first+2
+		var groupNum = nodes[first+1].Val
+		i = first + 2
 		second--
-		fmt.Println(second)
 		for i <= second {
 			if nodes[i].Type == Sharp {
 				nodes[i].Left = nodes[i+1]
@@ -418,7 +563,7 @@ func CreateSubtree(nodes []*Node, first int, second int) ([]*Node, error) {
 				currNode = nodes[i]
 				copy(nodes[i+1:], nodes[i+2:])
 				nodes = nodes[:len(nodes)-1]
-				Print(nodes)
+				//Print(nodes)
 				second--
 				i++
 			}
@@ -426,7 +571,7 @@ func CreateSubtree(nodes []*Node, first int, second int) ([]*Node, error) {
 		}
 		i = first + 2
 		for i <= second {
-			if nodes[i].Type == Plus {
+			if nodes[i].Type == Star {
 				nodes[i].Left = nodes[i-1]
 				nodes[i].Right = nil
 				nodes[i].Nullable = true
@@ -436,35 +581,15 @@ func CreateSubtree(nodes []*Node, first int, second int) ([]*Node, error) {
 				currNode = nodes[i]
 				copy(nodes[i-1:], nodes[i:])
 				nodes = nodes[:len(nodes)-1]
-				Print(nodes)
+				// Print(nodes)
 				second--
 				i--
 			}
 			i++
 		}
-		i = first + 2
-		fmt.Println(second)
-		for i <= second {
-			if nodes[i].Type == Repeat {
-				nodes[i].Left = nodes[i-1]
-				nodes[i].Right = nil
-				nodes[i].Nullable = nodes[i-1].Nullable
-				nodes[i].FirstPos = nodes[i-1].FirstPos
-				nodes[i].LastPos = nodes[i-1].LastPos
-				nodes[i-1].Parent = nodes[i]
-				currNode = nodes[i]
-				copy(nodes[i-1:], nodes[i:])
-				nodes = nodes[:len(nodes)-1]
-				Print(nodes)
-				second--
-				i--
-			}
-			i++
-		}
-		i = first+3
+		i = first + 3
 		for i <= second-1 {
 			if nodes[i].Type == Concat && nodes[i].Left == nil && nodes[i].Right == nil {
-				fmt.Println(i, second-1)
 				nodes[i].Left = nodes[i-1]
 				nodes[i].Right = nodes[i+1]
 				nodes[i].Nullable = nodes[i-1].Nullable && nodes[i+1].Nullable
@@ -484,13 +609,13 @@ func CreateSubtree(nodes []*Node, first int, second int) ([]*Node, error) {
 				copy(nodes[i:], nodes[i+2:])
 				nodes[i-1] = currNode
 				nodes = nodes[:len(nodes)-2]
-				Print(nodes)
-				i -=2
-				second = second-2
+				// Print(nodes)
+				i -= 2
+				second = second - 2
 			}
 			i++
 		}
-		i = first+3
+		i = first + 3
 		for i <= second-1 {
 			if i >= first+2 {
 				if nodes[i].Type == Or && nodes[i].Left == nil && nodes[i].Right == nil {
@@ -505,49 +630,51 @@ func CreateSubtree(nodes []*Node, first int, second int) ([]*Node, error) {
 					copy(nodes[i:], nodes[i+2:])
 					nodes[i-1] = currNode
 					nodes = nodes[:len(nodes)-2]
-					Print(nodes)
-					i -=2
-					second = second-2
+					// Print(nodes)
+					i -= 2
+					second = second - 2
 				}
 				i++
 			}
 			i++
 		}
-		nodes[first+1].Left = currNode
+ 		nodes[first+1].Left = currNode
 		nodes[first+1].Right = nil
+		nodes[first+1].Nullable = currNode.Nullable
+		nodes[first+1].FirstPos = currNode.FirstPos
+		nodes[first+1].LastPos = currNode.LastPos
 		currNode.Parent = nodes[first+1]
 		nodes[first] = nodes[first+1]
 		copy(nodes[first+1:], nodes[second+2:])
-		//Print(nodes)
-		//Print(nodes)
 		nodes = nodes[:len(nodes)-3]
-		m[currNode.Val] = currNode.Left
-		Print(nodes)
-		//fmt.Println(1)
+		m[groupNum] = currNode
+		// Print(nodes)
 	} else if second-first != 2 {
-		i = first+1
+		i = first + 1
 		second -= 1
-		for i < second {
+		for i <= second {
 			if nodes[i].Type == Reference {
 				var key = nodes[i].Val
-				nodes[i].Left, ok = m[key]
-				if !ok {
-					err = errors.New("group number error")
-					return nodes, err
-				}
-
+				nodes[i].Left = m[key]
+				nodes[i].Nullable = m[key].Nullable
+				nodes[i].FirstPos = m[key].FirstPos
+				nodes[i].LastPos = m[key].LastPos
 			}
+			i++
 		}
-		i = first+1
+		i = first + 1
 		for i <= second {
 			if nodes[i].Type == Sharp {
 				nodes[i].Left = nodes[i+1]
 				nodes[i].Right = nil
+				nodes[i].Nullable = nodes[i+1].Nullable
+				nodes[i].FirstPos = nodes[i+1].FirstPos
+				nodes[i].LastPos = nodes[i+1].LastPos
 				nodes[i+1].Parent = nodes[i]
 				currNode = nodes[i]
 				copy(nodes[i+1:], nodes[i+2:])
 				nodes = nodes[:len(nodes)-1]
-				Print(nodes)
+				// Print(nodes)
 				second--
 				i++
 			}
@@ -555,109 +682,104 @@ func CreateSubtree(nodes []*Node, first int, second int) ([]*Node, error) {
 		}
 		i = first + 1
 		for i <= second {
-			if nodes[i].Type == Plus {
+			if nodes[i].Type == Star {
 				nodes[i].Left = nodes[i-1]
 				nodes[i].Right = nil
 				nodes[i-1].Parent = nodes[i]
+				nodes[i].Nullable = true
+				nodes[i].FirstPos = nodes[i-1].FirstPos
+				nodes[i].LastPos = nodes[i-1].LastPos
 				currNode = nodes[i]
 				copy(nodes[i-1:], nodes[i:])
 				nodes = nodes[:len(nodes)-1]
-				Print(nodes)
+				// Print(nodes)
 				second--
 				i--
 			}
 			i++
 		}
 		i = first + 1
-		for i <= second {
-			if nodes[i].Type == Repeat {
-				nodes[i].Left = nodes[i-1]
-				nodes[i].Right = nil
-				nodes[i-1].Parent = nodes[i]
-				currNode = nodes[i]
-				copy(nodes[i-1:], nodes[i:])
-				nodes = nodes[:len(nodes)-1]
-				Print(nodes)
-				second--
-				i--
-			}
-			i++
-		}
-		i = first+1
+		i = first + 1
 		for i <= second-1 {
 			if i >= first+2 {
 				if nodes[i].Type == Concat && nodes[i].Left == nil && nodes[i].Right == nil {
 					nodes[i].Left = nodes[i-1]
 					nodes[i].Right = nodes[i+1]
+					nodes[i].Nullable = nodes[i-1].Nullable && nodes[i+1].Nullable
+					if nodes[i-1].Nullable {
+						nodes[i].FirstPos = Merge(nodes[i-1].FirstPos, nodes[i+1].FirstPos)
+					} else {
+						nodes[i].FirstPos = nodes[i-1].FirstPos
+					}
+					if nodes[i+1].Nullable {
+						nodes[i].LastPos = Merge(nodes[i-1].LastPos, nodes[i+1].LastPos)
+					} else {
+						nodes[i].LastPos = nodes[i+1].LastPos
+					}
 					nodes[i-1].Parent = nodes[i]
 					nodes[i+1].Parent = nodes[i]
 					currNode = nodes[i]
 					copy(nodes[i:], nodes[i+2:])
 					nodes[i-1] = currNode
 					nodes = nodes[:len(nodes)-2]
-					Print(nodes)
-					i -=2
-					second = second-2
+					// Print(nodes)
+					i -= 2
+					second = second - 2
 				}
 				i++
 			}
 			i++
 		}
-		i = first+1
+		i = first + 1
 		for i <= second-1 {
 			if i >= first+2 {
 				if nodes[i].Type == Or && nodes[i].Left == nil && nodes[i].Right == nil {
 					nodes[i].Left = nodes[i-1]
 					nodes[i].Right = nodes[i+1]
+					nodes[i].Nullable = nodes[i-1].Nullable || nodes[i+1].Nullable
+					nodes[i].FirstPos = Merge(nodes[i-1].FirstPos, nodes[i+1].FirstPos)
+					nodes[i].LastPos = Merge(nodes[i-1].LastPos, nodes[i+1].LastPos)
 					nodes[i-1].Parent = nodes[i]
 					nodes[i+1].Parent = nodes[i]
 					currNode = nodes[i]
 					copy(nodes[i:], nodes[i+2:])
 					nodes[i-1] = currNode
 					nodes = nodes[:len(nodes)-2]
-					Print(nodes)
-					i -=2
-					second = second-2
+					// Print(nodes)
+					i -= 2
+					second = second - 2
 				}
 				i++
 			}
 			i++
 		}
-		//fmt.Println(first, second)
 		copy(nodes[first+1:], nodes[second+2:])
 		nodes[first] = currNode
 		nodes = nodes[:len(nodes)-2]
-		Print(nodes)
+		//Print(nodes)
 	} else {
 		currNode = nodes[first+1]
 		copy(nodes[first+1:], nodes[second+1:])
 		nodes[first] = currNode
 		nodes = nodes[:len(nodes)-2]
 	}
-	return nodes, err
+	return nodes
 }
 
-func CreateTree(regex string) *Node {
-	var nodes = CreateNodes(CreateTokens(AddConcatenations(regex)))
+func CreateTree(regex string, idMap map[int]string, leafNodes map[string][]int) *Node {
+	var nodes = CreateNodes(CreateTokens(ReplaceRepeat(AddConcatenations(regex))), idMap, leafNodes)
 	var first, second = ClosestBrackets(nodes)
 	Print(nodes)
-	var err error
-	//fmt.Println(first, second)
 	for second-first > 1 {
-		//fmt.Println(first,second)
-		nodes, err = CreateSubtree(nodes, first, second)
-		if err != nil {
-			fmt.Println(err)
-			return nil
-		}
+		nodes = CreateSubtree(nodes, first, second, idMap)
 		first, second = ClosestBrackets(nodes)
 	}
+	id=1
 	return nodes[0]
 }
 
 func Print(nodes []*Node) {
 	for i := 0; i < len(nodes); i++ {
-		//fmt.Printf("\n%d\n", i)
 		if nodes[i].Type == 1 {
 			fmt.Printf("concat ")
 		}
@@ -665,7 +787,7 @@ func Print(nodes []*Node) {
 			fmt.Printf("or ")
 		}
 		if nodes[i].Type == 3 {
-			fmt.Printf("plus ")
+			fmt.Printf("star ")
 		}
 		if nodes[i].Type == 4 {
 			fmt.Printf("sharp ")
@@ -674,7 +796,7 @@ func Print(nodes []*Node) {
 			fmt.Printf("group ")
 		}
 		if nodes[i].Type == 6 {
-			fmt.Printf("shield ")
+			fmt.Printf("reference ")
 		}
 		if nodes[i].Type == 7 {
 			fmt.Printf("repeat ")
@@ -687,4 +809,97 @@ func Print(nodes []*Node) {
 		}
 	}
 	fmt.Println()
+}
+
+
+func FindFollowPos(n *Node, followpos [][]int) {
+	/*
+		if n is a ‘.’ (concat) Node, with a left child C1 and
+		right child C2 and i is a position in the Lastpos(C1),
+		then all positions in Firstpos(C2) are in Followpos(i)
+
+		if n is a * (closure) Node and i is a position in the
+		Lastpos(n), then all positions in Firstpos(n) are Followpos(i)
+	*/
+	//fmt.Println(followpos)
+	if n.Type == Concat {
+		for _, i := range n.Left.LastPos {
+			if followpos[i-1] != nil {
+				followpos[i-1] = Merge(followpos[i-1], n.Right.FirstPos)
+			} else {
+				followpos[i-1] = n.Right.FirstPos
+			}
+		}
+	} else if n.Type == Star {
+		for _, i := range n.LastPos {
+			if followpos[i-1] != nil {
+				//fmt.Println(followpos[i-1], n)
+				followpos[i-1] = Merge(followpos[i-1], n.FirstPos)
+			} else {
+				//fmt.Println(followpos[i-1], n)
+				followpos[i-1] = n.FirstPos
+			}
+		}
+	}
+	if n.Type == Group || n.Type == Sharp ||
+		n.Type == Repeat || n.Type == Reference || n.Type == Star {
+		FindFollowPos(n.Left, followpos)
+	} else if n.Type == Concat || n.Type == Or {
+		FindFollowPos(n.Left, followpos)
+		FindFollowPos(n.Right, followpos)
+	}
+}
+
+func PrintTree(n *Node) {
+	if n != nil {
+		PrintSubTree(n)
+	}
+}
+
+func PrintSubTree(n *Node) {
+	var parentState *NodePrint
+	if rootState != nil {
+		fmt.Printf(" ")
+		var s = rootState
+		for s.ChildState != nil {
+			if s.PrintLastChild {
+				fmt.Printf(" ")
+			} else {
+				fmt.Printf("│ ")
+			}
+			s = s.ChildState
+		}
+		parentState = s
+		if parentState.PrintLastChild {
+			fmt.Printf("└")
+		} else {
+			fmt.Printf("├")
+		}
+	} else {
+		parentState = nil
+	}
+	fmt.Printf("▶%s\n", n.Val)
+	if n.Left != nil || n.Right != nil {
+		var s NodePrint
+		if parentState != nil {
+			parentState.ChildState = &s
+		} else {
+			rootState = &s
+		}
+		s.ChildState = nil
+
+		if n.Left != nil {
+			s.PrintLastChild = n.Right == nil
+			PrintSubTree(n.Left)
+		}
+		if n.Right != nil {
+			s.PrintLastChild = true
+			PrintSubTree(n.Right)
+		}
+		if parentState != nil {
+			parentState.ChildState = nil
+		} else {
+			rootState = nil
+		}
+	}
 }
