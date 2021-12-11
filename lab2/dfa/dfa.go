@@ -2,8 +2,8 @@ package dfa
 
 import (
 	"fmt"
-	"lab2/tree"
 	"reflect"
+	"regex/tree"
 	"strings"
 )
 
@@ -69,8 +69,6 @@ func FindSeen(finded *State, mas []*State) bool {
 }
 
 func Convert(dfa *DFA, node *tree.Node, LeafNodes map[string][]int) *State {
-	//fmt.Println(LeafNodes)
-	//fmt.Println(dfa.InitialStateNumber)
 	dfa.InitialState = &State{Name: DictNames[num], StateNumber: dfa.InitialStateNumber}
 	dfa.NumberStates++
 	num++
@@ -88,12 +86,18 @@ func Convert(dfa *DFA, node *tree.Node, LeafNodes map[string][]int) *State {
 						i = append(i, c)
 					}
 				}
+				//fmt.Println(k, v, i)
 				if len(i) != 0 {
 					var nextStateNumber []int
 					for _, c := range i {
 						nextStateNumber = tree.Merge(nextStateNumber, dfa.FollowPos[c-1])
+						//				fmt.Println(nextStateNumber, c)
 					}
 					var broken = false
+					/*for _, v := range seenStates {
+						fmt.Printf("%s ", v.Name)
+					}
+					fmt.Println(nextStateNumber)*/
 					for _, seen := range seenStates {
 						if reflect.DeepEqual(nextStateNumber, seen.StateNumber) {
 							if state.Dtran == nil {
@@ -114,6 +118,7 @@ func Convert(dfa *DFA, node *tree.Node, LeafNodes map[string][]int) *State {
 							StateNumber: nextStateNumber}
 						dfa.NumberStates++
 						num++
+						//				fmt.Println(state.Name, state.Dtran)
 						if state.Dtran == nil {
 							state.Dtran = make(map[string]*State)
 						}
@@ -123,7 +128,6 @@ func Convert(dfa *DFA, node *tree.Node, LeafNodes map[string][]int) *State {
 				}
 			}
 		}
-
 	}
 	return dfa.InitialState
 }
@@ -153,7 +157,7 @@ func CopyDFA(dfa *DFA) *DFA {
 	return tmp
 }
 
-func FindExit(state *State) (s *State) {
+func FindExit(state *State) (s []*State) {
 	var leftStates = []*State{state}
 	var seenStates []*State
 	for len(leftStates) != 0 {
@@ -165,7 +169,7 @@ func FindExit(state *State) (s *State) {
 				leftStates = append(leftStates, v)
 			}
 			if state.Dtran == nil {
-				s = state
+				s = append(s, state)
 			}
 		}
 	}
@@ -195,19 +199,14 @@ func Compile(regex string) (d *DFA) {
 	var SyntaxTree tree.Ast
 	SyntaxTree.ID = make(map[int]string)
 	SyntaxTree.LeafNodes = make(map[string][]int)
-	SyntaxTree.Root = tree.CreateTree(regex, SyntaxTree.ID, SyntaxTree.LeafNodes)
+	SyntaxTree.Root, SyntaxTree.FollowPos = tree.CreateTree(regex, SyntaxTree.ID, SyntaxTree.LeafNodes, SyntaxTree.FollowPos)
 	tree.PrintTree(SyntaxTree.Root)
-	fmt.Println(SyntaxTree.ID)
 	//fmt.Println(SyntaxTree.ID)
-	for i := 0; i < len(SyntaxTree.ID); i++ {
-		SyntaxTree.FollowPos = append(SyntaxTree.FollowPos, nil)
-	}
-	tree.FindFollowPos(SyntaxTree.Root, SyntaxTree.FollowPos)
-	fmt.Println(SyntaxTree.FollowPos)
+	//fmt.Println(SyntaxTree.FollowPos)
+	//fmt.Println(SyntaxTree.LeafNodes)
 	d = InitDFA(SyntaxTree, SyntaxTree.FollowPos, SyntaxTree.Root.FirstPos)
-	var s = Convert(d, SyntaxTree.Root, SyntaxTree.LeafNodes)
-	fmt.Println(d)
-	fmt.Println(s)
+	Convert(d, SyntaxTree.Root, SyntaxTree.LeafNodes)
+	//fmt.Println(d)
 	Print(d.InitialState)
 	return
 }
@@ -248,22 +247,46 @@ func Search(pattern interface{}, str string) string {
 	return ""
 }
 
+func SameStates(s1 *State, s2 *State) bool {
+	var tr = false
+	for k, v := range s1.Dtran {
+		for k1,v1 := range s2.Dtran {
+			if k == k1 {
+				tr = true
+				if v != v1 {
+					return false
+				}
+			}
+		}
+		if !tr {
+			return false
+		}
+	}
+	return true
+}
+
 func Minimization(dfa *DFA) {
 	var states = ListOfStates(dfa)
-	var exits = []string{FindExit(dfa.InitialState).Name}
+	var exits []string
+	for _, v := range FindExit(dfa.InitialState) {
+		exits = append(exits, v.Name)
+	}
 	for i, v := range states {
-		if v == exits[0] {
-			copy(states[i:], states[i+1:])
-			states[len(states)-1] = ""
-			states = states[:len(states)-1]
+		for _, val := range exits {
+			if v == val {
+				copy(states[i:], states[i+1:])
+				states[len(states)-1] = ""
+				states = states[:len(states)-1]
+			}
 		}
 	}
 	var piSplit [][]string
 	piSplit = append(piSplit, states)
 	piSplit = append(piSplit, exits)
-	for k, v := range piSplit {
-		
-	}
+	/*for k, v := range piSplit {
+
+	}*/
+	fmt.Println(piSplit)
 }
 
 func GetPredecessors(dfa *DFA, name string) (pred []*State) {
@@ -285,7 +308,7 @@ func GetPredecessors(dfa *DFA, name string) (pred []*State) {
 	return
 }
 
-func GetSuccessors(dfa *DFA, name string) (pred []*State) {
+func GetSuccessors(dfa *DFA, name string) (s []*State) {
 	var leftStates = []*State{dfa.InitialState}
 	var seenStates []*State
 	for len(leftStates) != 0 {
@@ -293,9 +316,10 @@ func GetSuccessors(dfa *DFA, name string) (pred []*State) {
 		leftStates = leftStates[:len(leftStates)-1]
 		if !FindSeen(state, seenStates) {
 			seenStates = append(seenStates, state)
+			//fmt.Println(state.Name, state.Dtran)
 			for _, v := range state.Dtran {
-				if state.Name == name {
-					pred = append(pred, v)
+				if state.Name == name && v.Name != name {
+					s = append(s, v)
 				}
 				leftStates = append(leftStates, v)
 			}
@@ -303,16 +327,6 @@ func GetSuccessors(dfa *DFA, name string) (pred []*State) {
 	}
 	return
 }
-
-func CheckSelfLoop(s *State) bool {
-	for _, v := range s.Dtran {
-		if v == s {
-			return true
-		}
-	}
-	return false
-}
-
 
 func ListOfStates(dfa *DFA) (names []string)  {
 	var leftStates = []*State{dfa.InitialState}
@@ -375,59 +389,124 @@ func GetTransition(state *State, next string) string {
 	return ""
 }
 
+func GetState(dfa *DFA, name string) *State {
+	var leftStates = []*State{dfa.InitialState}
+	var seenStates []*State
+	for len(leftStates) != 0 {
+		var state = leftStates[len(leftStates)-1]
+		leftStates = leftStates[:len(leftStates)-1]
+		if !FindSeen(state, seenStates) {
+			seenStates = append(seenStates, state)
+			if state.Name == name {
+				return state
+			}
+			for _, v := range state.Dtran {
+				leftStates = append(leftStates, v)
+			}
+		}
+	}
+	return nil
+}
 
-func CreateRE(dfa *DFA) *State {
-	var tmp = CopyDFA(dfa)
-	var start = tmp.InitialState
+func CheckSelfLoop(dfa *DFA, name string) bool {
+	var s = GetState(dfa, name)
+	for _, v := range s.Dtran {
+		if v.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+
+func CreateRE(tmp *DFA, s *State, m map[string]map[string]*State) *State {
+	var start = s
 	var exit = FindExit(start)
-	var m = GetTransitions(start, nil)
-	fmt.Println(m)
+	var exitFlag bool
+	fmt.Println(start, exit)
 	for _, k := range ListOfStates(tmp) {
-		if k == start.Name && k == exit.Name {
+		if k == start.Name {
+			continue
+		}
+		exitFlag = false
+		for _, v := range exit {
+			if k == v.Name {
+				exitFlag = true
+			}
+		}
+		if exitFlag {
 			continue
 		}
 		var p = GetPredecessors(tmp, k)
 		var s = GetSuccessors(tmp, k)
-		var loop = CheckSelfLoop(p[0].Dtran[k])
+		var loop = CheckSelfLoop(tmp, k)
+		var state = GetState(tmp, k)
+		//fmt.Println(p[0].Name, s[0].Name, loop, state.Name)
+		//fmt.Println(m)
 		var pTs, sTp, pLoop, sLoop string = "", "", "", ""
-		for i:=0; i < len(p); i++ {
-			for j:=0; j < len(s); j++ {
-				//путь предыдущий->следующий
-				pTs = GetTransition(p[i], s[j].Name)+GetTransition(p[i], k)
-				if loop {
-					pTs += GetTransition(p[i].Dtran[k], k) + "+"
-				}
-				pTs += GetTransition(p[i].Dtran[k], s[j].Name)
-				//путь следующий предыдущий
-				sTp = GetTransition(s[j], p[i].Name)+GetTransition(s[j], k)
-				if loop {
-					sTp += GetTransition(p[i].Dtran[k], k) + "+"
-				}
-				sTp += GetTransition(s[j].Dtran[k], p[i].Name)
-				//луп для предыдущего
-				var tr1 = GetTransition(p[i].Dtran[k], p[i].Name)
-				if tr1 != "" {
-					pLoop += GetTransition(p[i], k)
+		if len(s) > 1 {
+			for _, v := range s {
+				CreateRE(tmp, v, m)
+			}
+		} else {
+			for i := 0; i < len(p); i++ {
+				for j := 0; j < len(s); j++ {
+					//fmt.Println(i, j, p, s)
+					//путь предыдущий->следующий
+					pTs = GetTransition(p[i], s[j].Name) + GetTransition(p[i], k)
+					//fmt.Println(pTs)
 					if loop {
-						pLoop += GetTransition(p[i].Dtran[k], k) + "+"
+						pTs += GetTransition(state, k) + "*"
 					}
-					pLoop += tr1
-				}
-				//луп для следующего
-				var tr2 = GetTransition(s[j].Dtran[k], s[j].Name)
-				if tr2 != "" {
-					sLoop += GetTransition(s[j], k)
-					if loop {
-						sLoop += GetTransition(s[j].Dtran[k], k) + "+"
+					pTs += GetTransition(state, s[j].Name)
+					//fmt.Println(pTs)
+					//путь следующий предыдущий
+					//fmt.Println(s[j].Name, p[i].Name, k)
+					sTp = GetTransition(s[j], p[i].Name) + GetTransition(s[j], k)
+					if sTp != "" {
+						if loop {
+							sTp += GetTransition(state, k) + "*"
+						}
+						sTp += GetTransition(state, p[i].Name)
 					}
-					sLoop += tr2
+					//луп для предыдущего
+					var tr1_1 = GetTransition(state, p[i].Name)
+					var tr1_2 = GetTransition(p[i], state.Name)
+					if tr1_1 != "" && tr1_2 != "" {
+						pLoop += tr1_2
+						if loop {
+							pLoop += GetTransition(state, k) + "*"
+						}
+						pLoop += tr1_1
+					}
+					//луп для следующего
+					var tr2_1 = GetTransition(state, s[j].Name)
+					var tr2_2 = GetTransition(s[j], state.Name)
+					if tr2_1 != "" && tr2_2 != "" {
+						pLoop += tr2_2
+						if loop {
+							pLoop += GetTransition(state, k) + "*"
+						}
+						pLoop += tr2_1
+					}
+					//fmt.Println(pTs)
+					delete(m[p[i].Name], GetTransition(p[i], k))
+					if pTs != "" {
+						m[p[i].Name][pTs] = s[j]
+					}
+					if sTp != "" {
+						m[s[j].Name][sTp] = p[i]
+					}
+					if pLoop != "" {
+						m[p[i].Name][pLoop] = p[i]
+					}
+					if sLoop != "" {
+						m[s[j].Name][sLoop] = s[j]
+					}
+					//fmt.Printf("pTs=%v, sTp=%v, pL=%v, sL=%v\n", pTs, sTp, pLoop, sLoop)
+					//fmt.Println(m)
+					pTs, sTp, pLoop, sLoop = "", "", "", ""
 				}
-				delete(m[p[i].Name], GetTransition(p[i], k))
-				m[p[i].Name][pTs] = s[j]
-				m[s[j].Name][sTp] = p[i]
-				m[p[i].Name][pLoop] = p[i]
-				m[s[j].Name][sLoop] = s[j]
-				pTs, sTp, pLoop, sLoop = "", "", "", ""
 			}
 		}
 	}
@@ -508,6 +587,17 @@ type ResultDfa struct {
 	ReceiveStates []*ResState
 }
 
+
+func FindInExits(exits []string, name string) bool {
+	for _, v := range exits {
+		if v == name {
+			return true
+		}
+	}
+	return false
+}
+
+
 func Difference(dfa1 *DFA, dfa2 *DFA) *ResultDfa {
 	var stateList = Mul(dfa1, dfa2)
 	for _, v := range stateList {
@@ -520,9 +610,14 @@ func Difference(dfa1 *DFA, dfa2 *DFA) *ResultDfa {
 		}
 	}
 	var res = &ResultDfa{InitialState: NewStateList[0], ReceiveStates: nil}
-	var ExitState = FindExit(dfa1.InitialState).Name + "," + FindExit(dfa2.InitialState).Name
+	var Exits []string
+	for _, v := range FindExit(dfa1.InitialState) {
+		for _, f := range FindExit(dfa2.InitialState) {
+			Exits = append(Exits, v.Name+","+f.Name)
+		}
+	}
 	for _, v := range NewStateList {
-		if v.Name != ExitState && v.Name != NewStateList[0].Name {
+		if FindInExits(Exits, v.Name) && v.Name != NewStateList[0].Name && v.Reachable == true {
 			res.ReceiveStates = append(res.ReceiveStates, v)
 		}
 	}
@@ -544,9 +639,14 @@ func Intersection(dfa1 *DFA, dfa2 *DFA) *ResultDfa {
 		}
 	}
 	var res = &ResultDfa{InitialState: NewStateList[0], ReceiveStates: nil}
-	var ExitState = FindExit(dfa1.InitialState).Name + "," + FindExit(dfa2.InitialState).Name
-	for _, v := range stateList {
-		if v.Name == ExitState {
+	var Exits []string
+	for _, v := range FindExit(dfa1.InitialState) {
+		for _, f := range FindExit(dfa2.InitialState) {
+			Exits = append(Exits, v.Name+","+f.Name)
+		}
+	}
+	for _, v := range NewStateList {
+		if FindInExits(Exits, v.Name) && v.Name != NewStateList[0].Name && v.Reachable == true {
 			res.ReceiveStates = append(res.ReceiveStates, v)
 		}
 	}
