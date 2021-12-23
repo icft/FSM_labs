@@ -11,7 +11,8 @@ type State struct {
 	Name        string
 	StateNumber []int
 	Dtran       map[string]*State
-	num int
+	num 		int
+	Receive		bool
 }
 
 var num = 1
@@ -51,6 +52,7 @@ type DFA struct {
 	InitialStateNumber []int
 	InitialState       *State
 	NumberStates	   int
+	Alphabet 		   []string
 }
 
 func InitDFA(root tree.Ast, FollowPos [][]int, FirstPos []int) *DFA {
@@ -62,6 +64,15 @@ func FindSeen(finded *State, mas []*State) bool {
 		if finded.Name == a.Name &&
 			reflect.DeepEqual(finded.Name, a.Name) &&
 			reflect.DeepEqual(finded.Dtran, a.Dtran) {
+			return true
+		}
+	}
+	return false
+}
+
+func Find(dfa *DFA, s string) bool {
+	for _, v := range dfa.Alphabet {
+		if v == s {
 			return true
 		}
 	}
@@ -86,18 +97,13 @@ func Convert(dfa *DFA, node *tree.Node, LeafNodes map[string][]int) *State {
 						i = append(i, c)
 					}
 				}
-				//fmt.Println(k, v, i)
+				//fmt.Println(i)
 				if len(i) != 0 {
 					var nextStateNumber []int
 					for _, c := range i {
 						nextStateNumber = tree.Merge(nextStateNumber, dfa.FollowPos[c-1])
-						//				fmt.Println(nextStateNumber, c)
 					}
 					var broken = false
-					/*for _, v := range seenStates {
-						fmt.Printf("%s ", v.Name)
-					}
-					fmt.Println(nextStateNumber)*/
 					for _, seen := range seenStates {
 						if reflect.DeepEqual(nextStateNumber, seen.StateNumber) {
 							if state.Dtran == nil {
@@ -118,9 +124,11 @@ func Convert(dfa *DFA, node *tree.Node, LeafNodes map[string][]int) *State {
 							StateNumber: nextStateNumber}
 						dfa.NumberStates++
 						num++
-						//				fmt.Println(state.Name, state.Dtran)
 						if state.Dtran == nil {
 							state.Dtran = make(map[string]*State)
+						}
+						if !Find(dfa, k) {
+							dfa.Alphabet = append(dfa.Alphabet, k)
 						}
 						state.Dtran[k] = nextState
 						leftStates = append(leftStates, nextState)
@@ -132,6 +140,27 @@ func Convert(dfa *DFA, node *tree.Node, LeafNodes map[string][]int) *State {
 	return dfa.InitialState
 }
 
+func SetReceive(start *State) {
+	var leftStates = []*State{start}
+	var seenStates []*State
+	for len(leftStates) != 0 {
+		var state = leftStates[len(leftStates)-1]
+		leftStates = leftStates[:len(leftStates)-1]
+		if !FindSeen(state, seenStates) {
+			seenStates = append(seenStates, state)
+			k, _ := GetKeysValues(state.Dtran)
+			if len(state.Dtran) == 0 || (len(state.Dtran)==1 && state.Dtran[k[0]] == state) {
+				state.Receive = true
+			} else {
+				state.Receive = false
+			}
+			for _, v := range state.Dtran {
+				leftStates = append(leftStates, v)
+			}
+		}
+	}
+}
+
 func Print(start *State) {
 	var leftStates = []*State{start}
 	var seenStates []*State
@@ -140,7 +169,7 @@ func Print(start *State) {
 		leftStates = leftStates[:len(leftStates)-1]
 		if !FindSeen(state, seenStates) {
 			seenStates = append(seenStates, state)
-			fmt.Printf("<%s  %v>     ", state.Name, state.StateNumber)
+			fmt.Printf("<%s  %v %v>     ", state.Name, state.StateNumber, state.Receive)
 			for k, v := range state.Dtran {
 				fmt.Printf("Dtran<%s>=%s    ", k, v.Name)
 				leftStates = append(leftStates, v)
@@ -157,8 +186,8 @@ func CopyDFA(dfa *DFA) *DFA {
 	return tmp
 }
 
-func FindExit(state *State) (s []*State) {
-	var leftStates = []*State{state}
+func FindExit(st *State) (s []*State) {
+	var leftStates = []*State{st}
 	var seenStates []*State
 	for len(leftStates) != 0 {
 		var state = leftStates[len(leftStates)-1]
@@ -176,40 +205,20 @@ func FindExit(state *State) (s []*State) {
 	return s
 }
 
-func FindAnother(state *State) (mas []*State) {
-	var leftStates = []*State{state}
-	var seenStates []*State
-	for len(leftStates) != 0 {
-		var state = leftStates[len(leftStates)-1]
-		leftStates = leftStates[:len(leftStates)-1]
-		if !FindSeen(state, seenStates) {
-			seenStates = append(seenStates, state)
-			for _, v := range state.Dtran {
-				leftStates = append(leftStates, v)
-			}
-			if state.Dtran != nil {
-				mas = append(mas, state)
-			}
-		}
-	}
-	return mas
-}
 
 func Compile(regex string) (d *DFA) {
 	var SyntaxTree tree.Ast
+	regex = "(("+regex+")$)"
 	SyntaxTree.ID = make(map[int]string)
 	SyntaxTree.LeafNodes = make(map[string][]int)
 	SyntaxTree.Root, SyntaxTree.FollowPos = tree.CreateTree(regex, SyntaxTree.ID, SyntaxTree.LeafNodes, SyntaxTree.FollowPos)
-	tree.PrintTree(SyntaxTree.Root)
-	//fmt.Println(SyntaxTree.ID)
-	//fmt.Println(SyntaxTree.FollowPos)
-	//fmt.Println(SyntaxTree.LeafNodes)
 	d = InitDFA(SyntaxTree, SyntaxTree.FollowPos, SyntaxTree.Root.FirstPos)
 	Convert(d, SyntaxTree.Root, SyntaxTree.LeafNodes)
-	//fmt.Println(d)
-	Print(d.InitialState)
+	SetReceive(d.InitialState)
 	return
 }
+
+var startState *State
 
 func Search(pattern interface{}, str string) string {
 	var dfa *DFA
@@ -218,31 +227,36 @@ func Search(pattern interface{}, str string) string {
 	} else {
 		dfa = pattern.(*DFA)
 	}
-	var state = dfa.InitialState.Dtran
-	var i = 0
-	var subStr = false
+	startState = dfa.InitialState
+	return search(dfa.InitialState, str, 0, "")
+}
+
+func search(state *State, str string, ind int, copystr string) string {
 	var finded bool
-	var startInd= -1
-	for i < len(str) {
+	var startInd = -1
+	for ind < len(str) {
 		finded = false
-		for k, v := range state {
-			if string(str[i]) == k {
+		for k, v := range state.Dtran {
+			if string(str[ind]) == k {
 				if startInd == -1 {
-					startInd = i
+					startInd = ind
 				}
+				copystr += k
 				finded = true
-				subStr = true
-				state = v.Dtran
+				state = v
+				break
 			}
 		}
-		if !finded {
+		ind++
+		if state.Receive {
+			return copystr
+		}
+		if !finded && state != startState {
 			startInd = -1
-			state = dfa.InitialState.Dtran
+			for _, v := range state.Dtran {
+				return search(v, str, ind, copystr)
+			}
 		}
-		if subStr && state == nil {
-			return str[startInd:i+1]
-		}
-		i++
 	}
 	return ""
 }
@@ -265,28 +279,137 @@ func SameStates(s1 *State, s2 *State) bool {
 	return true
 }
 
+
+func MakeTransition(state *State, tr string) *State {
+	for k, v := range state.Dtran {
+		if k == tr {
+			return v
+		}
+	}
+	return nil
+}
+
+func Equal(mas1 []*State, mas2 []*State) bool {
+	if len(mas1) != len(mas2) {
+		return false
+	}
+	for i:=0; i < len(mas1); i++ {
+		if mas1[i].Name == mas2[i].Name && reflect.DeepEqual(mas1[i].Dtran, mas2[i].Dtran) {
+			continue
+		} else {
+			return false
+		}
+	}
+	return true
+}
+
 func Minimization(dfa *DFA) {
 	var states = ListOfStates(dfa)
-	var exits []string
+	var exits []*State
 	for _, v := range FindExit(dfa.InitialState) {
-		exits = append(exits, v.Name)
+		exits = append(exits, v)
 	}
 	for i, v := range states {
 		for _, val := range exits {
 			if v == val {
 				copy(states[i:], states[i+1:])
-				states[len(states)-1] = ""
+				states[len(states)-1] = nil
 				states = states[:len(states)-1]
 			}
 		}
 	}
-	var piSplit [][]string
-	piSplit = append(piSplit, states)
-	piSplit = append(piSplit, exits)
-	/*for k, v := range piSplit {
-
-	}*/
-	fmt.Println(piSplit)
+	var split, new_split [][]*State
+	split = append(split, states)
+	split = append(split, exits)
+	var table = make(map[*State][]*State)
+	for _, i := range split {
+		for _, j := range i {
+			table[j] = i
+		}
+	}
+	for len(new_split) != len(split) {
+		var new_table = make(map[*State][]*State)
+		if len(new_split) != 0 {
+			split = new_split
+			new_split = nil
+		}
+		for _, v := range split {
+			if len(v) == 1 {
+				new_split = append(new_split, v)
+				if _, err := new_table[v[0]]; !err {
+					new_table[v[0]] = v
+				}
+				continue
+			}
+			for j, a := range v {
+				if _, err := new_table[a]; !err {
+					var tmp []*State
+					tmp = append(tmp, a)
+					new_table[a] = tmp
+					new_split = append(new_split, tmp)
+				}
+				for k := j + 1; k < len(v); k++ {
+					var s = v[k]
+					var add = true
+					if _, err := new_table[s]; !err {
+						for _, m := range dfa.Alphabet {
+							var r1 = MakeTransition(a, m)
+							var r2 = MakeTransition(s, m)
+							if r1 != nil && r2 != nil {
+								if Equal(new_table[r1], new_table[r2]) {
+									add = false
+									break
+								}
+							} else if !(r1 == nil && r2 == nil) {
+								add = false
+								break
+							}
+						}
+					}
+					if add {
+						if _, err := new_table[s]; !err {
+							new_table[a] = append(new_table[a], s)
+							new_table[s] = new_table[a]
+						}
+					}
+				}
+			}
+		}
+		table = new_table
+		new_table = nil
+	}
+	split = new_split
+	for _, v := range split {
+ 		if len(v) > 1 {
+ 			var m =  v[0]
+ 			for i:=1; i < len(v); i++ {
+ 				var predecessors = GetPredecessors(dfa, v[i].Name)
+ 				var successors = GetSuccessors(dfa, v[i].Name)
+ 				for _, state := range predecessors {
+ 					var k string
+ 					for key, val := range state.Dtran {
+ 						if val == v[i] {
+ 							delete(state.Dtran, key)
+ 							k = key
+ 							break
+						}
+					}
+					 state.Dtran[k] = m
+				}
+				for _, state := range successors {
+					var k string
+					for key, val := range m.Dtran {
+						if val == state {
+							delete(m.Dtran, k)
+							k = key
+							break
+						}
+					}
+					m.Dtran[k] = state
+				}
+			}
+		}
+	}
 }
 
 func GetPredecessors(dfa *DFA, name string) (pred []*State) {
@@ -316,7 +439,6 @@ func GetSuccessors(dfa *DFA, name string) (s []*State) {
 		leftStates = leftStates[:len(leftStates)-1]
 		if !FindSeen(state, seenStates) {
 			seenStates = append(seenStates, state)
-			//fmt.Println(state.Name, state.Dtran)
 			for _, v := range state.Dtran {
 				if state.Name == name && v.Name != name {
 					s = append(s, v)
@@ -328,7 +450,7 @@ func GetSuccessors(dfa *DFA, name string) (s []*State) {
 	return
 }
 
-func ListOfStates(dfa *DFA) (names []string)  {
+func ListOfStates(dfa *DFA) (names []*State)  {
 	var leftStates = []*State{dfa.InitialState}
 	var seenStates []*State
 	for len(leftStates) != 0 {
@@ -339,7 +461,7 @@ func ListOfStates(dfa *DFA) (names []string)  {
 			for _, v := range state.Dtran {
 				leftStates = append(leftStates, v)
 			}
-			names = append(names, state.Name)
+			names = append(names, state)
 		}
 	}
 	return
@@ -418,127 +540,303 @@ func CheckSelfLoop(dfa *DFA, name string) bool {
 	return false
 }
 
+func GetKeysValues(m map[string]*State) (str []string, s []*State) {
+	for k, v := range m {
+		str = append(str, k)
+		s = append(s, v)
+	}
+	return
+}
 
-func CreateRE(tmp *DFA, s *State, m map[string]map[string]*State) *State {
-	var start = s
-	var exit = FindExit(start)
-	var exitFlag bool
-	fmt.Println(start, exit)
-	for _, k := range ListOfStates(tmp) {
-		if k == start.Name {
-			continue
+type Pair struct {
+	str string
+	state *State
+}
+
+func CreateTransitions(tmp *DFA, k *State, flag bool) *State {
+	if k.Name == tmp.InitialState.Name {
+		return k
+	}
+	var p = GetPredecessors(tmp, k.Name)[0]
+	var s = GetSuccessors(tmp, k.Name)[0]
+	var loop = CheckSelfLoop(tmp, k.Name)
+	/*if k.Name == "T" {
+		fmt.Println(p, s, loop)
+	}*/
+	var pTs, sTp, pLoop, sLoop string = "", "", "", ""
+	if !flag {
+		if GetTransition(p, k.Name) == "+" || GetTransition(p, k.Name) == "|" ||
+			GetTransition(p, k.Name) == "{" || GetTransition(p, k.Name) == "}" ||
+			GetTransition(p, k.Name) == "\\" || GetTransition(p, k.Name) == "." ||
+			GetTransition(p, k.Name) == "#" {
+			pTs = "#"+GetTransition(p, k.Name)
+		} else  {
+			pTs = GetTransition(p, k.Name)
 		}
-		exitFlag = false
-		for _, v := range exit {
-			if k == v.Name {
-				exitFlag = true
-			}
+	} else {
+		if GetTransition(p, s.Name) == "+" || GetTransition(p, s.Name) == "|" ||
+			GetTransition(p, s.Name) == "{" || GetTransition(p, s.Name) == "}" ||
+			GetTransition(p, s.Name) == "\\" || GetTransition(p, s.Name) == "." ||
+			GetTransition(p, s.Name) == "#" {
+			pTs += "#"+GetTransition(p, s.Name)
+		} else  {
+			pTs += GetTransition(p, s.Name)
 		}
-		if exitFlag {
-			continue
-		}
-		var p = GetPredecessors(tmp, k)
-		var s = GetSuccessors(tmp, k)
-		var loop = CheckSelfLoop(tmp, k)
-		var state = GetState(tmp, k)
-		//fmt.Println(p[0].Name, s[0].Name, loop, state.Name)
-		//fmt.Println(m)
-		var pTs, sTp, pLoop, sLoop string = "", "", "", ""
-		if len(s) > 1 {
-			for _, v := range s {
-				CreateRE(tmp, v, m)
-			}
-		} else {
-			for i := 0; i < len(p); i++ {
-				for j := 0; j < len(s); j++ {
-					//fmt.Println(i, j, p, s)
-					//путь предыдущий->следующий
-					pTs = GetTransition(p[i], s[j].Name) + GetTransition(p[i], k)
-					//fmt.Println(pTs)
-					if loop {
-						pTs += GetTransition(state, k) + "*"
-					}
-					pTs += GetTransition(state, s[j].Name)
-					//fmt.Println(pTs)
-					//путь следующий предыдущий
-					//fmt.Println(s[j].Name, p[i].Name, k)
-					sTp = GetTransition(s[j], p[i].Name) + GetTransition(s[j], k)
-					if sTp != "" {
-						if loop {
-							sTp += GetTransition(state, k) + "*"
-						}
-						sTp += GetTransition(state, p[i].Name)
-					}
-					//луп для предыдущего
-					var tr1_1 = GetTransition(state, p[i].Name)
-					var tr1_2 = GetTransition(p[i], state.Name)
-					if tr1_1 != "" && tr1_2 != "" {
-						pLoop += tr1_2
-						if loop {
-							pLoop += GetTransition(state, k) + "*"
-						}
-						pLoop += tr1_1
-					}
-					//луп для следующего
-					var tr2_1 = GetTransition(state, s[j].Name)
-					var tr2_2 = GetTransition(s[j], state.Name)
-					if tr2_1 != "" && tr2_2 != "" {
-						pLoop += tr2_2
-						if loop {
-							pLoop += GetTransition(state, k) + "*"
-						}
-						pLoop += tr2_1
-					}
-					//fmt.Println(pTs)
-					delete(m[p[i].Name], GetTransition(p[i], k))
-					if pTs != "" {
-						m[p[i].Name][pTs] = s[j]
-					}
-					if sTp != "" {
-						m[s[j].Name][sTp] = p[i]
-					}
-					if pLoop != "" {
-						m[p[i].Name][pLoop] = p[i]
-					}
-					if sLoop != "" {
-						m[s[j].Name][sLoop] = s[j]
-					}
-					//fmt.Printf("pTs=%v, sTp=%v, pL=%v, sL=%v\n", pTs, sTp, pLoop, sLoop)
-					//fmt.Println(m)
-					pTs, sTp, pLoop, sLoop = "", "", "", ""
-				}
-			}
+		if GetTransition(p, k.Name) == "+" || GetTransition(p, k.Name) == "|" ||
+			GetTransition(p, k.Name) == "{" || GetTransition(p, k.Name) == "}" ||
+			GetTransition(p, k.Name) == "\\" || GetTransition(p, k.Name) == "." ||
+			GetTransition(p, k.Name) == "#" {
+			pTs += "#"+GetTransition(p, k.Name)
+		} else  {
+			pTs += GetTransition(p, k.Name)
 		}
 	}
-	return start
+	if loop {
+		if GetTransition(k, k.Name) == "+" || GetTransition(k, k.Name) == "|" ||
+			GetTransition(k, k.Name) == "{" || GetTransition(k, k.Name) == "}" ||
+			GetTransition(k, k.Name) == "\\" || GetTransition(k, k.Name) == "." ||
+			GetTransition(k, k.Name) == "#" {
+			pTs += "#"+GetTransition(k, k.Name) + "*"
+		} else  {
+			pTs += GetTransition(k, k.Name) + "*"
+		}
+	}
+	if GetTransition(k, s.Name) == "+" || GetTransition(k, s.Name) == "|" ||
+		GetTransition(k, s.Name) == "{" || GetTransition(k, s.Name) == "}" ||
+		GetTransition(k, s.Name) == "\\" || GetTransition(k, s.Name) == "." ||
+		GetTransition(k, s.Name) == "#" {
+		pTs += "#"+GetTransition(k, s.Name)
+	} else  {
+		pTs += GetTransition(k, s.Name)
+	}
+	if GetTransition(s, p.Name) == "+" || GetTransition(s, p.Name) == "|" ||
+		GetTransition(s, p.Name) == "{" || GetTransition(s, p.Name) == "}" ||
+		GetTransition(s, p.Name) == "\\" || GetTransition(s, p.Name) == "." ||
+		GetTransition(s, p.Name) == "#" {
+		sTp = "#" + GetTransition(s, p.Name)
+	} else  {
+		sTp = GetTransition(s, p.Name)
+	}
+	if GetTransition(s, k.Name) == "+" || GetTransition(s, k.Name) == "|" ||
+		GetTransition(s, k.Name) == "{" || GetTransition(s, k.Name) == "}" ||
+		GetTransition(s, k.Name) == "\\" || GetTransition(s, k.Name) == "." ||
+		GetTransition(s, k.Name) == "#" {
+		sTp += "#" + GetTransition(s, k.Name)
+	} else  {
+		sTp += GetTransition(s, k.Name)
+	}
+	if sTp != "" {
+		if loop {
+			if GetTransition(k, k.Name) == "+" || GetTransition(k, k.Name) == "|" ||
+				GetTransition(k, k.Name) == "{" || GetTransition(k, k.Name) == "}" ||
+				GetTransition(k, k.Name) == "\\" || GetTransition(k, k.Name) == "." ||
+				GetTransition(k, k.Name) == "#" {
+				sTp += "#" + GetTransition(k, k.Name) + "*"
+			} else  {
+				sTp += GetTransition(k, k.Name) + "*"
+			}
+		}
+		if GetTransition(k, p.Name) == "+" || GetTransition(k, p.Name) == "|" ||
+			GetTransition(k, p.Name) == "{" || GetTransition(k, p.Name) == "}" ||
+			GetTransition(k, p.Name) == "\\" || GetTransition(k, p.Name) == "." ||
+			GetTransition(k, p.Name) == "#" {
+			sTp += "#" + GetTransition(k, p.Name)
+		} else  {
+			sTp += GetTransition(k, p.Name)
+		}
+	}
+	var tr1_1, tr1_2 string
+	if GetTransition(k, p.Name) == "+" || GetTransition(k, p.Name) == "|" ||
+		GetTransition(k, p.Name) == "{" || GetTransition(k, p.Name) == "}" ||
+		GetTransition(k, p.Name) == "\\" || GetTransition(k, p.Name) == "." ||
+		GetTransition(k, p.Name) == "#" {
+		tr1_1 = "#"+GetTransition(k, p.Name)
+	} else  {
+		tr1_1 = GetTransition(k, p.Name)
+	}
+	if GetTransition(p, k.Name) == "+" || GetTransition(p, k.Name) == "|" ||
+		GetTransition(p, k.Name) == "{" || GetTransition(p, k.Name) == "}" ||
+		GetTransition(p, k.Name) == "\\" || GetTransition(p, k.Name) == "." ||
+		GetTransition(p, k.Name) == "#" {
+		tr1_2 = "#"+GetTransition(p, k.Name)
+	} else  {
+		tr1_2 = GetTransition(p, k.Name)
+	}
+	if tr1_1 != "" && tr1_2 != "" {
+		pLoop += tr1_2
+		if loop {
+			if GetTransition(k, k.Name) == "+" || GetTransition(k, k.Name) == "|" ||
+				GetTransition(k, k.Name) == "{" || GetTransition(k, k.Name) == "}" ||
+				GetTransition(k, k.Name) == "\\" || GetTransition(k, k.Name) == "." ||
+				GetTransition(k, k.Name) == "#" {
+				pLoop += "#" + GetTransition(k, k.Name) + "*"
+			} else  {
+				pLoop += GetTransition(k, k.Name) + "*"
+			}
+		}
+		pLoop += tr1_1
+	}
+	var tr2_1, tr2_2 string
+	if GetTransition(k, s.Name) == "+" || GetTransition(k, s.Name) == "|" ||
+		GetTransition(k, s.Name) == "{" || GetTransition(k, s.Name) == "}" ||
+		GetTransition(k, s.Name) == "\\" || GetTransition(k, s.Name) == "." ||
+		GetTransition(k, s.Name) == "#" {
+		tr2_1 = "#"+GetTransition(k, p.Name)
+	} else  {
+		tr2_1 = GetTransition(k, p.Name)
+	}
+	if GetTransition(s, k.Name) == "+" || GetTransition(s, k.Name) == "|" ||
+		GetTransition(s, k.Name) == "{" || GetTransition(s, k.Name) == "}" ||
+		GetTransition(s, k.Name) == "\\" || GetTransition(s, k.Name) == "." ||
+		GetTransition(s, k.Name) == "#" {
+		tr2_2 = "#"+GetTransition(p, k.Name)
+	} else  {
+		tr1_2 = GetTransition(p, k.Name)
+	}
+	if tr2_1 != "" && tr2_2 != "" {
+		sLoop += tr2_2
+		if loop {
+			if GetTransition(k, k.Name) == "+" || GetTransition(k, k.Name) == "|" ||
+				GetTransition(k, k.Name) == "{" || GetTransition(k, k.Name) == "}" ||
+				GetTransition(k, k.Name) == "\\" || GetTransition(k, k.Name) == "." ||
+				GetTransition(k, k.Name) == "#" {
+				sLoop += "#" + GetTransition(k, k.Name) + "*"
+			} else  {
+				sLoop += GetTransition(k, k.Name) + "*"
+			}
+		}
+		sLoop += tr2_1
+	}
+	delete(p.Dtran, GetTransition(p, k.Name))
+	//fmt.Printf("%s %s %s %s\n", pTs, sTp, pLoop, sLoop)
+	if pTs != "" {
+		p.Dtran[pTs] = s
+	}
+	if sTp != "" {
+		s.Dtran[sTp] = p
+	}
+	if pLoop != "" {
+		p.Dtran[pLoop] = p
+	}
+	if sLoop != "" {
+		s.Dtran[sLoop] = s
+	}
+	return s
 }
 
-type ResState struct {
-	Name        string
-	Dtran       map[string]*ResState
-	Reachable bool
+var stack []*State
+
+func CreateRE(tmp *DFA) (regex string) {
+	var start = tmp.InitialState
+	for true {
+		if start.Receive {
+			break
+		}
+		if len(start.Dtran) == 2 && CheckSelfLoop(tmp, start.Name) {
+			start = CreateTransitions(tmp, start, true)
+		} else if len(start.Dtran) > 1  {
+			for _, v := range start.Dtran {
+				stack = append(stack, start)
+				CreateSubOr(tmp, v)
+			}
+			for _, v := range start.Dtran {
+				stack = append(stack, start)
+				CreateSubOr(tmp, v)
+			}
+			var newMap = make(map[string]*State)
+			var newKey = "("
+			var _, end = GetKeysValues(start.Dtran)
+			for k, _ := range start.Dtran {
+				if k == "+" || k == "|" || k== "{" || k == "}" ||
+					k == "\\" || k == "." || k == "#"{
+					newKey += "(#" + k + ")|"
+				} else {
+					newKey += "(" + k + ")|"
+				}
+			}
+			newKey = newKey[:len(newKey)-1]
+			newKey += ")"
+			newMap[newKey] = end[0]
+			start.Dtran = newMap
+			start = CreateTransitions(tmp, start, true)
+		} else if len(start.Dtran) == 1 && start != tmp.InitialState {
+			start = CreateTransitions(tmp, start, true)
+		} else if len(start.Dtran) == 1 && start == tmp.InitialState {
+			_, v := GetKeysValues(start.Dtran)
+			start = v[0]
+		}
+	}
+	k, _ := GetKeysValues(tmp.InitialState.Dtran)
+	return k[0]
 }
 
-func DekartMul(mas1 []string, mas2 []string) (res []*ResState) {
-	for _, i := range mas1 {
-		for _, j := range mas2 {
-			res = append(res, &ResState{Name: i+","+j, Reachable: false})
+func CreateSubOr(tmp *DFA, state *State) {
+	fmt.Println(state)
+	if len(GetPredecessors(tmp, state.Name)) > 1 {
+		stack = stack[:len(stack)-1]
+		return
+	}
+	if state.Receive {
+		return
+	}
+	for len(stack) != 0 {
+		//fmt.Println(state)
+		if len(GetPredecessors(tmp, state.Name)) > 1 {
+			stack = stack[:len(stack)-1]
+			return
+		}
+		if len(state.Dtran) > 1 {
+			for _, v := range state.Dtran {
+				stack = append(stack, state)
+				CreateSubOr(tmp, v)
+			}
+			var newMap = make(map[string]*State)
+			var newKey = "("
+			var _, end = GetKeysValues(state.Dtran)
+			for k, _ := range state.Dtran {
+				if k == "+" || k == "|" || k== "{" || k == "}" ||
+					k == "\\" || k == "." || k == "#"{
+					newKey += "(#" + k + ")|"
+				} else {
+					newKey += "(" + k + ")|"
+				}
+			}
+			newKey = newKey[:len(newKey)-1]
+			newKey += ")"
+			newMap[newKey] = end[0]
+			state.Dtran = newMap
+			state = CreateTransitions(tmp, state, true)
+		} else if len(state.Dtran) == 1 && state != tmp.InitialState {
+			state = CreateTransitions(tmp, state, false)
 		}
 	}
 	return
 }
 
-func Mul(dfa1 *DFA, dfa2 *DFA) []*ResState {
+func DekartMul(mas1 []*State, mas2 []*State) (res []*State, m map[string]bool) {
+	for _, i := range mas1 {
+		for _, j := range mas2 {
+			var str =  i.Name+","+j.Name
+			res = append(res, &State{Name: i.Name+","+j.Name})
+			if m == nil {
+				m = make(map[string]bool)
+			}
+			m[str] = false
+		}
+	}
+	return
+}
+
+func Mul(dfa1 *DFA, dfa2 *DFA) ([]*State, map[string]bool) {
 	var names1 = ListOfStates(dfa1)
 	var names2 = ListOfStates(dfa2)
-	var stateList = DekartMul(names1, names2)
+	var stateList, reach = DekartMul(names1, names2)
 	var trans = GetTransitions(dfa1.InitialState, dfa2.InitialState)
-	stateList[0].Reachable = true
+	reach[stateList[0].Name] = true
 	for i:=0; i < len(stateList); i++ {
 		var m = make(map[string]map[string]*State)
 		var n []string
 		var k string = ""
-		//fmt.Println(stateList[i])
 		for j, v := range stateList[i].Name {
 			if v != ',' {
 				k += string(v)
@@ -557,7 +855,6 @@ func Mul(dfa1 *DFA, dfa2 *DFA) []*ResState {
 			nextName = v.Name+","
 			for z:=1; z < len(n); z++ {
 				for kz, vz := range m[n[z]] {
-					//fmt.Println(key, kz)
 					if key == kz {
 						nextName += vz.Name+","
 						break
@@ -565,30 +862,31 @@ func Mul(dfa1 *DFA, dfa2 *DFA) []*ResState {
 				}
 			}
 			nextName = nextName[:len(nextName)-1]
-			//fmt.Println(nextName)
 			for a:=0; a < len(stateList); a++ {
-				//fmt.Println(stateList[a])
 				if stateList[a].Name == nextName {
 					if stateList[i].Dtran == nil {
-						stateList[i].Dtran = make(map[string]*ResState)
+						stateList[i].Dtran = make(map[string]*State)
 					}
-					stateList[a].Reachable = stateList[i].Reachable
+					reach[stateList[a].Name] = reach[stateList[i].Name]
 					stateList[i].Dtran[key] = stateList[a]
 					break
 				}
 			}
 		}
 	}
-	return stateList
+	return stateList, reach
 }
 
-type ResultDfa struct {
-	InitialState *ResState
-	ReceiveStates []*ResState
+func FindInExits(exits []*State, name string) bool {
+	for _, v := range exits {
+		if v.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
-
-func FindInExits(exits []string, name string) bool {
+func FindInExitsString(exits []string, name string) bool {
 	for _, v := range exits {
 		if v == name {
 			return true
@@ -597,48 +895,60 @@ func FindInExits(exits []string, name string) bool {
 	return false
 }
 
-
-func Difference(dfa1 *DFA, dfa2 *DFA) *ResultDfa {
-	var stateList = Mul(dfa1, dfa2)
+func Difference(dfa1 *DFA, dfa2 *DFA) *DFA {
+	var stateList, reach = Mul(dfa1, dfa2)
+	var NewStateList []*State
 	for _, v := range stateList {
-		fmt.Println(v)
-	}
-	var NewStateList []*ResState
-	for _, v := range stateList {
-		if v.Reachable {
+		if reach[v.Name] {
 			NewStateList = append(NewStateList, v)
 		}
 	}
-	var res = &ResultDfa{InitialState: NewStateList[0], ReceiveStates: nil}
+	var res = &DFA{InitialState: NewStateList[0]}
 	var Exits []string
-	for _, v := range FindExit(dfa1.InitialState) {
-		for _, f := range FindExit(dfa2.InitialState) {
+	var exits1, exits2, list2 = FindExit(dfa1.InitialState), FindExit(dfa2.InitialState), ListOfStates(dfa2)
+	var ex []*State
+	for _, v := range list2 {
+		if !FindInExits(exits2, v.Name) {
+			ex = append(ex, v)
+		}
+	}
+	for _, v := range exits1 {
+		for _, f := range ex {
 			Exits = append(Exits, v.Name+","+f.Name)
 		}
 	}
 	for _, v := range NewStateList {
-		if FindInExits(Exits, v.Name) && v.Name != NewStateList[0].Name && v.Reachable == true {
-			res.ReceiveStates = append(res.ReceiveStates, v)
+		if FindInExitsString(Exits, v.Name) && v.Name != NewStateList[0].Name && reach[v.Name] == true {
+			v.Receive = true
 		}
 	}
-	for _, v := range res.ReceiveStates {
-		fmt.Println(v)
+	var leftStates = []*State{res.InitialState}
+	var seenStates []*State
+	for len(leftStates) != 0 {
+		var state = leftStates[len(leftStates)-1]
+		leftStates = leftStates[:len(leftStates)-1]
+		if !FindSeen(state, seenStates) {
+			seenStates = append(seenStates, state)
+			for k, v := range state.Dtran {
+				leftStates = append(leftStates, v)
+				if !Find(res, k) {
+					res.Alphabet = append(res.Alphabet, k)
+				}
+			}
+		}
 	}
 	return res
 }
 
-func Intersection(dfa1 *DFA, dfa2 *DFA) *ResultDfa {
-	var stateList = Mul(dfa1, dfa2)
+func Intersection(dfa1 *DFA, dfa2 *DFA) *DFA {
+	var stateList, reach = Mul(dfa1, dfa2)
+	var NewStateList []*State
 	for _, v := range stateList {
-		fmt.Println(v)
-	}
-	var NewStateList []*ResState
-	for _, v := range stateList {
-		if v.Reachable {
+		if reach[v.Name] {
 			NewStateList = append(NewStateList, v)
 		}
 	}
-	var res = &ResultDfa{InitialState: NewStateList[0], ReceiveStates: nil}
+	var res = &DFA{InitialState: NewStateList[0]}
 	var Exits []string
 	for _, v := range FindExit(dfa1.InitialState) {
 		for _, f := range FindExit(dfa2.InitialState) {
@@ -646,8 +956,23 @@ func Intersection(dfa1 *DFA, dfa2 *DFA) *ResultDfa {
 		}
 	}
 	for _, v := range NewStateList {
-		if FindInExits(Exits, v.Name) && v.Name != NewStateList[0].Name && v.Reachable == true {
-			res.ReceiveStates = append(res.ReceiveStates, v)
+		if FindInExitsString(Exits, v.Name) && v.Name != NewStateList[0].Name && reach[v.Name] == true {
+			v.Receive = true
+		}
+	}
+	var leftStates = []*State{res.InitialState}
+	var seenStates []*State
+	for len(leftStates) != 0 {
+		var state = leftStates[len(leftStates)-1]
+		leftStates = leftStates[:len(leftStates)-1]
+		if !FindSeen(state, seenStates) {
+			seenStates = append(seenStates, state)
+			for k, v := range state.Dtran {
+				leftStates = append(leftStates, v)
+				if !Find(res, k) {
+					res.Alphabet = append(res.Alphabet, k)
+				}
+			}
 		}
 	}
 	return res
