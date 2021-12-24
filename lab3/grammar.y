@@ -1,22 +1,8 @@
 %{
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <structs.h>
-#include <lex.yy.c>
-
-extern FILE *yyin;
-
-Node *opr(int oper, int num, ...);
-Node *id(std::string s);
-Node *con(int value);
-void freeNode(Node *n);
-int exec(Node *p);
+#include "lex.yy.c"
+#include "Nodes.h"
 int yylex(void);
-void init(void);
 void yyerror(chat *s);
-
-std::map<std::string, int> sym;
 %}
 
 %union {
@@ -29,14 +15,14 @@ std::map<std::string, int> sym;
 %token <ival> INTVAL
 %token <bval> TRUE FALSE UNDEFINED
 %token <str> NAME
-%token INT SHORT BOOL VECTOR OF BEGIN DO WHILE IF THEN MOVE SET RIGHT LEFT LMS FUNC RETURN
+%token INT SHORT BOOL VECTOR OF BEGIN_ DO WHILE IF THEN MOVE SET RIGHT LEFT LMS FUNC RETURN SIZEOF 
 %nonassoc IFX
 %nonassoc ELSE
-
+%nonassoc END
 %left SMALLER LARGER
 %left ADD SUB NOT OR AND
 
-%type <ptr> stmt expr stmt_list function type params names directions fdecl
+%type <Node> stmt expr stmt_list type names directions fdecl fcall
 
 %%
 
@@ -59,13 +45,17 @@ stmt:
     | IF expr THEN stmt %prec IFX                           {}
     | IF expr THEN stmt ELSE stmt                           {}
     | directions ';'                                        {}
-    | BEGIN stmt END ';'                                    {}
-    | BEGIN END                                             {}
+    | BEGIN_ stmt END                                       {}
+    | BEGIN_ END                                            {}
     | fdecl                                                 {}
+    | fcall                                                 {}
     ;
 
 fdecl:
-    FUNC NAME '(' arglist ')' BEGIN stmt_list RETURN expr   {}
+    FUNC NAME '(' arglist ')' BEGIN_ stmt_list RETURN expr  {}
+
+fcall:
+    NAME '(' names ')' ';'                                 {}
 
 arglist:
 	  '(' ')'                                               {}
@@ -92,42 +82,24 @@ stmt_list:
     ;
 
 expr:
-      INTVAL                                                {}
-    | NAME                                                  {}
-    | TRUE                                                  {}
-    | FALSE                                                 {}
-    | UNDEFINED                                             {}
-    | expr ADD expr                                         {}
-    | expr SUB expr                                         {}
-    | expr '|' expr SMALLER                                 {}
-    | expr '|' expr LARGER                                  {}
-    | expr OR expr                                          {}
-    | expr AND expr                                         {}
+      INTVAL                                                {$$=$1;}
+    | NAME                                                  {$$=$1;}
+    | TRUE                                                  {$$=$1;}
+    | FALSE                                                 {$$=$1;}
+    | UNDEFINED                                             {$$=$1;}
+    | expr ADD expr                                         {$$=$1+$3;}
+    | expr SUB expr                                         {$$=$1-$3;}
+    | expr '|' expr SMALLER                                 {if ($1<$3) {printf("true");}
+                                                             if ($1>$3) {printf("false");}
+                                                             if ($1==$3) {printf("undefined");}}
+    | expr '|' expr LARGER                                  {if ($1>$3) {printf("true");}
+                                                             if ($1<$3) {printf("false");}
+                                                             if ($1==$3) {printf("undefined");}}
+    | expr OR expr                                          {$$=$1 || $3;}
+    | expr AND expr                                         {$$=$1 && $3;}
     | expr NOT OR expr                                      {}
     | expr NOT AND expr                                     {}
     | '(' expr ')'                                          {}
-    ;
-
-vecdecl:
-       vecof type NAME '[' expr ']'                         {}
-    |  vecof type NAME '[' expr ']'
-    |  vecof type NAME SET '{' vecoperands '}'              {}
-    ;
-
-vecoperands:
-      vecoperandslist                                       {}
-    | '{' vecoperands '}' ',' vecoperands                   {}
-    |
-    ;
-
-vecoperandslist:
-      expr                                                  {}
-    | vecoperandslist ',' expr                              {}
-    ;
-
-vecof:
-      VECTOR OF                                             {}
-    | vecof VECTOR OF                                       {}
     ;
 
 type:
@@ -154,3 +126,15 @@ oplist:
    | oplist ' ' expr                                        {}
    ;
 %%
+
+void yyerror(char *s) {
+   std::string str;
+   str = c;
+   std::cout << str << std::endl;
+}
+
+int main(void) {
+   yyparse();
+   return 0;
+}
+	
