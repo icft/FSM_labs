@@ -197,7 +197,7 @@ func FindExit(st *State) (s []*State) {
 			for _, v := range state.Dtran {
 				leftStates = append(leftStates, v)
 			}
-			if state.Dtran == nil {
+			if state.Receive {
 				s = append(s, state)
 			}
 		}
@@ -213,6 +213,7 @@ func Compile(regex string) (d *DFA) {
 	SyntaxTree.LeafNodes = make(map[string][]int)
 	SyntaxTree.Root, SyntaxTree.FollowPos = tree.CreateTree(regex, SyntaxTree.ID, SyntaxTree.LeafNodes, SyntaxTree.FollowPos)
 	d = InitDFA(SyntaxTree, SyntaxTree.FollowPos, SyntaxTree.Root.FirstPos)
+	//tree.PrintTree(SyntaxTree.Root)
 	Convert(d, SyntaxTree.Root, SyntaxTree.LeafNodes)
 	SetReceive(d.InitialState)
 	return
@@ -232,23 +233,39 @@ func Search(pattern interface{}, str string) string {
 }
 
 func search(state *State, str string, ind int, copystr string) string {
+	//fmt.Println("String ", str)
 	var finded bool
 	var startInd = -1
 	for ind < len(str) {
 		finded = false
+		var flag = false
 		for k, v := range state.Dtran {
+			//fmt.Println(v, state)
 			if string(str[ind]) == k {
 				if startInd == -1 {
 					startInd = ind
 				}
 				copystr += k
 				finded = true
+				if v.Name == state.Name {
+					flag = true
+				}
 				state = v
 				break
 			}
 		}
+		var selfLoop = false
+		for _, v := range state.Dtran {
+			if state == v {
+				selfLoop = true
+			}
+		}
 		ind++
-		if state.Receive {
+		//fmt.Println(copystr)
+		if flag {
+			continue
+		}
+		if state.Receive && !selfLoop {
 			return copystr
 		}
 		if !finded && state != startState {
@@ -257,6 +274,10 @@ func search(state *State, str string, ind int, copystr string) string {
 				return search(v, str, ind, copystr)
 			}
 		}
+
+	}
+	if copystr == str {
+		return copystr
 	}
 	return ""
 }
@@ -771,7 +792,6 @@ func CreateRE(tmp *DFA) (regex string) {
 }
 
 func CreateSubOr(tmp *DFA, state *State) {
-	fmt.Println(state)
 	if len(GetPredecessors(tmp, state.Name)) > 1 {
 		stack = stack[:len(stack)-1]
 		return
@@ -867,7 +887,9 @@ func Mul(dfa1 *DFA, dfa2 *DFA) ([]*State, map[string]bool) {
 					if stateList[i].Dtran == nil {
 						stateList[i].Dtran = make(map[string]*State)
 					}
-					reach[stateList[a].Name] = reach[stateList[i].Name]
+					if reach[stateList[a].Name] == false {
+						reach[stateList[a].Name] = reach[stateList[i].Name]
+					}
 					stateList[i].Dtran[key] = stateList[a]
 					break
 				}
@@ -943,6 +965,7 @@ func Difference(dfa1 *DFA, dfa2 *DFA) *DFA {
 func Intersection(dfa1 *DFA, dfa2 *DFA) *DFA {
 	var stateList, reach = Mul(dfa1, dfa2)
 	var NewStateList []*State
+	fmt.Println(reach)
 	for _, v := range stateList {
 		if reach[v.Name] {
 			NewStateList = append(NewStateList, v)
@@ -950,12 +973,18 @@ func Intersection(dfa1 *DFA, dfa2 *DFA) *DFA {
 	}
 	var res = &DFA{InitialState: NewStateList[0]}
 	var Exits []string
+	fmt.Println(dfa1.InitialState)
+	fmt.Println(dfa2.InitialState)
+	fmt.Println(FindExit(dfa1.InitialState))
+	fmt.Println(FindExit(dfa2.InitialState))
 	for _, v := range FindExit(dfa1.InitialState) {
 		for _, f := range FindExit(dfa2.InitialState) {
 			Exits = append(Exits, v.Name+","+f.Name)
 		}
 	}
+	fmt.Println(Exits)
 	for _, v := range NewStateList {
+		fmt.Println(FindInExitsString(Exits, v.Name))
 		if FindInExitsString(Exits, v.Name) && v.Name != NewStateList[0].Name && reach[v.Name] == true {
 			v.Receive = true
 		}
