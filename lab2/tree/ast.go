@@ -540,7 +540,7 @@ func Merge(first []int, second []int) []int {
 	return res
 }
 
-func CopyTree(node *Node) *Node {
+func CopyTree(node *Node, leafNodes map[string][]int) *Node {
 	if node == nil {
 		return nil
 	}
@@ -557,6 +557,8 @@ func CopyTree(node *Node) *Node {
 			LastPos:  node.LastPos,
 			Nullable: node.Nullable,
 		}
+		leafNodes[node.Val] = append(leafNodes[node.Val], id)
+		id++
 	} else {
 		newnode = &Node{
 			Id:       -1,
@@ -570,14 +572,14 @@ func CopyTree(node *Node) *Node {
 			Nullable: node.Nullable,
 		}
 	}
-	newnode.Left = CopyTree(node.Left)
-	newnode.Right = CopyTree(node.Right)
+	newnode.Left = CopyTree(node.Left, leafNodes)
+	newnode.Right = CopyTree(node.Right, leafNodes)
 	return newnode
 }
 
 var m = make(map[string]*Node)
 
-func CreateSubtree(nodes []*Node, first int, second int, followpos [][]int) ([]*Node, [][]int) {
+func CreateSubtree(nodes []*Node, first int, second int, followpos [][]int, leafNodes map[string][]int) ([]*Node, [][]int) {
 	var currNode *Node
 	var i int
 	_, ok := m[nodes[first+1].Val]
@@ -700,7 +702,8 @@ func CreateSubtree(nodes []*Node, first int, second int, followpos [][]int) ([]*
 				if _, ok = m[key]; !ok {
 					panic("Group not previously mentioned\n")
 				}
-				nodes[i].Left = CopyTree(m[key])
+				nodes[i].Left = CopyTree(m[key], leafNodes)
+				//fmt.Println(leafNodes)
 				nodes[i].Nullable = m[key].Nullable
 				nodes[i].FirstPos = m[key].FirstPos
 				nodes[i].LastPos = m[key].LastPos
@@ -827,7 +830,7 @@ func CreateTree(regex string, idMap map[int]string, leafNodes map[string][]int, 
 		followpos = append(followpos, nil)
 	}
 	for second-first > 1 {
-		nodes, followpos = CreateSubtree(nodes, first, second, followpos)
+		nodes, followpos = CreateSubtree(nodes, first, second, followpos, leafNodes)
 		first, second = ClosestBrackets(nodes)
 	}
 	id=1
