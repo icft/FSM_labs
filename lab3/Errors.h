@@ -2,38 +2,56 @@
 #include <iostream>
 #include <exception>
 #include <string>
+#include <utility>
 
-class SyntaxError : public std::exception {
+
+class Exception : public std::exception {
 public:
-	SyntaxError(std::string s) : exception(s.c_str()) {}
+    std::string msg;
+
+    Exception(std::string s) : msg(std::move(s)) {}
+    virtual void what() {std::cout << msg << std::endl;}
+    virtual ~Exception() = default;
 };
 
-class CastError : public std::exception {
+class SyntaxError : public Exception {
 public:
-	CastError(std::string s) : exception(s.c_str()) {}
+    SyntaxError(std::string s) : Exception(std::move(s)) {}
+    virtual ~SyntaxError() = default;
 };
 
-class IndexError : public std::exception {
+class CastError : public Exception {
 public:
-	IndexError(std::string s) : exception(s.c_str()) {}
+    CastError(std::string s) : Exception(std::move(s)) {}
+    virtual ~CastError() = default;
 };
 
-class NameError : public std::exception {
+class IndexError : public Exception {
 public:
-	NameError(std::string s) : exception(s.c_str()) {}
+    IndexError(std::string s) : Exception(std::move(s)) {}
+    virtual ~IndexError() = default;
 };
 
-class OverflowError : public std::exception {
+class NameError : public Exception {
 public:
-	OverflowError(std::string s) : exception(s.c_str()) {}
+    NameError(std::string s) : Exception(std::move(s)) {}
+    virtual ~NameError() = default;
 };
 
-class TypeError : public std::exception {
+class OverflowError : public Exception {
 public:
-	TypeError(std::string s) : exception(s.c_str()) {}
+    OverflowError(std::string s) : Exception(std::move(s)) {}
+    virtual ~OverflowError() = default;
 };
 
-class MemoryError : public std::exception {
+class TypeError : public Exception {
 public:
-	MemoryError(std::string s) : exception(s.c_str()) {}
+    TypeError(std::string s) : Exception(std::move(s)) {}
+    virtual ~TypeError() = default;
+};
+
+class MemoryError : public Exception {
+public:
+    MemoryError(std::string s) : Exception(std::move(s)) {}
+    virtual ~MemoryError() = default;
 };
