@@ -1,11 +1,15 @@
 #pragma once
 
-#include "DataTypes.h"
+#include "Datatypes.h"
 #include <map>
+#include <memory>
+#include "Nodes.h"
+
+enum class UnitType {VARIABLE, FUNCTION};
 
 class MemoryUnit {
 public:
-	std::shared_ptr<Object> data;
+    std::shared_ptr<Object> data;
 
     MemoryUnit() : data(nullptr) {}
     MemoryUnit(std::shared_ptr<Object> d, bool l = false) : data(d) {}
@@ -356,11 +360,16 @@ public:
         }
         return res;
     }
+    MemoryUnit operator[](std::vector<int> dims) {
+        if (data->get_type() == Datatypes::VECTOR) {
+            return MemoryUnit((*std::dynamic_pointer_cast<Vector>(data))[dims]);
+        } else {
+            throw TypeError("Index operator only for vector");
+        }
+    }
     virtual UnitType get_type() {}
     ~MemoryUnit() = default;
 };
-
-enum class UnitType {VARIABLE, FUNCTION};
 
 class VariableUnit : public MemoryUnit {
 public:
@@ -378,11 +387,13 @@ public:
     }
 };
 
+class Node;
+
 class FunctionUnit : public MemoryUnit {
 public:
     std::string name;
     std::vector<std::pair<Datatypes, std::string>> params;
-    std::shared_ptr<FDeclNode> link;
+    std::shared_ptr<Node> link;
     UnitType type = UnitType::FUNCTION;
 
     FunctionUnit(std::string n, std::vector<std::pair<Datatypes, std::string>> p) {
@@ -390,10 +401,10 @@ public:
         params = p;
     }
     ~FunctionUnit() = default;
-    void set_link(std::shared_ptr<FDeclNode> f) {
+    void set_link(std::shared_ptr<Node> f) {
         link = f;
     }
-    std::shared_ptr<FDeclNode> get_link() {
+    std::shared_ptr<Node> get_link() {
         return link;
     }
     std::string get_name() {
@@ -453,20 +464,23 @@ public:
     std::shared_ptr<VariableUnit> operator[](std::string name) {
         if (local[name]->get_type() != UnitType::VARIABLE) {
             throw MemoryError("Variable with this name doesn't exists");
-        }
-        else {
+        } else if (local.contains(name) && local[name]->get_type() == UnitType::VARIABLE) {
             return std::dynamic_pointer_cast<VariableUnit>(local[name]);
+        } else {
+            return (*parent)[name];
         }
     }
     std::shared_ptr<FunctionUnit> operator[](std::pair<std::string, std::vector<Datatypes>> p) {
         if (local[p.first]->get_type() != UnitType::FUNCTION) {
             throw MemoryError("Function with this name doesn't exists");
-        }
-        else if (!std::dynamic_pointer_cast<FunctionUnit>(local[p.first])->check_all(p.second)) {
-            throw TypeError("Error in arg list");
-        }
-        else {
-            return std::dynamic_pointer_cast<FunctionUnit>(local[p.first]);
+        } else if (local.contains(p.first) && local[p.first]->get_type() == UnitType::FUNCTION) {
+            if (!std::dynamic_pointer_cast<FunctionUnit>(local[p.first])->check_all(p.second)) {
+                throw TypeError("Error in arg list");
+            } else {
+                return std::dynamic_pointer_cast<FunctionUnit>(local[p.first]);
+            }
+        } else {
+            return (*parent)[p];
         }
     }
 };
