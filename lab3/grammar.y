@@ -2,7 +2,7 @@
 #include "Nodes.h"
 #include "lex.yy.c"
 
-std::shared_ptr<Node> root;
+std::shared_ptr<Node>* root;
 
 int yylex(void);
 void yyerror(const char*);
@@ -23,7 +23,7 @@ std::vector<std::pair<Datatypes, std::string>> params_;
 %token <ival_> INTVAL
 %token <bval_> TRUE <bval_> FALSE <bval_> UNDEFINED
 %token <types_> INT <types_> SHORT <types_> BOOL <types_> VECTOR
-%token <string> NAME
+%token <string_> NAME
 %token DO WHILE IF
 %nonassoc THEN
 %nonassoc IFX
@@ -37,7 +37,7 @@ std::vector<std::pair<Datatypes, std::string>> params_;
 %token LMS, OF
 %token FUNC RETURN
 %token SIZEOF
-%left LARGER SMALLER
+%token LARGER SMALLER
 %left ADD SUB
 %nonassoc '{' '}'
 
@@ -56,7 +56,7 @@ std::vector<std::pair<Datatypes, std::string>> params_;
 %type <> callargs
 %type <> indexes
 %type <> sizeofargs
-%type <> type 
+%type <> type
 %type <> directions
 %type <> operands
 %type <> oplist
@@ -65,134 +65,129 @@ std::vector<std::pair<Datatypes, std::string>> params_;
 %%
 
 program:
-	'\n'												{}
-	| program stmt '\n'									{}
-	| program error '\n'								{}
-	|													{}
+	'\n'												    {}
+	| program stmt                                          {(**$1).add(*$2); $$=$1; delete $2; root=$$;}
+	| program stmt '\n'									    {(**$1).add(*$2); $$=$1; delete $2; root=$$;}
+	| program error '\n'								    {}
+	|													    {$$=new std::make_shared<Statement>(); (*$$)=std::make_shared<Statement>();root=$$;}
 	;
 
-
 stmt_list:
-	stmt												{}
-	| stmt_list stmt									{}
+	stmt												    {$$=new std::Shared_ptr<Statement>(); *$$=std::make_shared<Statement>(*$1); delete $1;}
+	| stmt_list stmt									    {$1->add($2); $$=$1; delete $2;}
 	;
 
 stmt:
-	BEGIN_ END											{}
-	| BEGIN_ stmt_list END								{}
-	| ';'												{}
-	| expr ';'											{}
-	| decl ';'											{}
-	| expr SET expr ';'									{}
-	| DO stmt WHILE expr ';'							{}
-	| IF expr THEN stmt %prec IFX						{}
-	| IF expr THEN stmt ELSE stmt						{}
-	| FUNC NAME argslist BEGIN_ stmt_list END			{}	
+	BEGIN_ END											    {$$=new std::shared_ptr<Node>();}
+	| BEGIN_ stmt_list END								    {$$=new std::shared_ptr<Node>(); *$$=*$2; delete $2;}
+	| ';'												    {$$=new std::shared_ptr<Node>(); *$$=nullptr;}
+	| expr ';'											    {$$=$1;}
+	| decl ';'											    {$$=$1;}
+    | directions ';'									    	{$$=$1;}
+	| expr SET expr ';'									    {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<SetNode>(*$1, *$3);}
+	| DO stmt WHILE expr ';'							    {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<LoopNode>(*$4, *$2);}
+	| IF expr THEN stmt %prec IFX						    {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<IfNode>(*$2, *$4);}
+	| IF expr THEN stmt ELSE stmt						    {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<IfNode>(*$2, *$4, *$6);}
+	| FUNC NAME argslist BEGIN_ stmt_list END RETURN expr;	{$$=new std::shared_ptr<Node>(); *$$=std::make_shared<FDeclNode>(*$2, *$5, *$3, *$8);}
 	;
 
 argslist:
-	'(' ')'												{}
-	| '(' args ')'										{}
+	'(' ')'												    {}
+	| '(' fargs ')'										    {}
 	;
 
 fargs:
-	type NAME											{}
-	| args ',' type NAME								{}
+	type NAME											    {}
+	| fargs ',' type NAME								    {}
 	;
 
 decl:
-	varlist												{}
-	| varlistwithset									{}
-	| vecof type NAME SET '{' vecdecl '}' 				{}
-	| vecof type NAME indexes							{}
-	| vecof type NAME indexes SET '{' vecdecl '}'		{}
+	varlist												    {}
+	| vecof type NAME SET vecdecl       				    {}
+	| vecof type NAME indexes							    {}
+	| vecof type NAME indexes SET vecdecl          		    {}
 	;
 
 varlist:
-	type NAME											{}
-	| varlist, NAME										{}
-	;
-
-varlistwithset:
-	type NAME SET expr									{}
-	| varlistwithset NAME SET expr						{}
-	;
-
-vecdecl:
-	'{' expr '}'										{}
-	| vecdecl ',' '{' vecdecl '}'						{}
-	| vecopr											{}
-	;
+	type NAME											    {}
+    | type NAME SET expr									{}	
+    | varlist ',' NAME										    {}
+	| varlist ',' NAME SET expr						        {}
+    ;
 
 vecof:
-	TYPE OF												{}
-	| vecof TYPE OF										{}
+	VECTOR OF												    {}
+	| vecof VECTOR OF										    {}
+	;
+	
+vecdecl:
+	'{' expr '}'									    {}
+	| '{' vecdecl_list '}'						    {}
 	;
 
-vecopr:
-	expr												{}
-	| vecopr ',' expr									{}
+vecdecl_list:
+	vecdecl 											    {$$=new std::vector<std::shared_ptr<Node>>(); $$->push_back(*$1); delete $1;}
+	| vecdecl_list ',' vecdecl									    {$1->push_back(*$3); $$=$1; delete $3;}
 	;
-
+	
 expr:
-	INT													{}
-	| NAME												{}
-	| TRUE												{}
-	| FALSE												{}
-	| UNDEFINED											{}
-	| expr ADD expr										{}
-	| expr SUB expr										{}
-	| expr OR expr										{}
-	| expr NOT OR expr									{}
-	| expr AND expr										{}
-	| expr NOT AND expr									{}
-	| expr '|' expr SMALLER								{}
-	| expr '|' expr LARGER								{}
-	| '(' expr ')'										{}
-	| SIZEOF '(' sizeofargs	')'							{}
-	| NAME indexes										{}
-	| directions										{}
-	| NAME '(' callargs ')'								{}
+	INT													    {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<IntLeaf>(*$1);}
+	| SHORT                                                 {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<ShortLeaf>(*$1);}
+	| NAME												    {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<VarLeaf>(*$1);}
+	| TRUE												    {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<BoolLeaf>(*$1);}
+	| FALSE												    {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<BoolLeaf>(*$1);}
+	| UNDEFINED											    {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<BoolLeaf>(*$1);}
+	| expr ADD expr										    {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<AddNode>(*$1, *$3);}
+	| expr SUB expr										    {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<SubNode>(*$1, *$3);}
+	| expr OR expr										    {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<OrNode>(*$1, *$3);}
+	| expr NOT OR expr									    {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<NorNode>(*$1, *$3);}
+	| expr AND expr									    	{$$=new std::shared_ptr<Node>(); *$$=std::make_shared<AndNode>(*$1, *$3);}
+	| expr NOT AND expr								    	{$$=new std::shared_ptr<Node>(); *$$=std::make_shared<NandNode>(*$1, *$3);}
+	| expr '|' expr SMALLER							    	{$$=new std::shared_ptr<Node>(); *$$=std::make_shared<SmallerNode>(*$1, *$3);}
+	| expr '|' expr LARGER							    	{$$=new std::shared_ptr<Node>(); *$$=std::make_shared<LargerNode>(*$1, *$3);}
+	| '(' expr ')'									    	{$$=$2;}
+	| SIZEOF '(' sizeofargs	')'						    	{$$=new std::shared_ptr<Node>(); *$$=std::make_shared<SizeofNode>(*$3);}
+	| expr indexes									    	{$$=new std::shared_ptr<Node>(); *$$=std::make_shared<IndexNode>(*$1, *$2);}
+//	| directions									    	{$$=$1;}
+	| NAME '(' callargs ')'							    	{$$=new std::shared_ptr<Node>(); *$$=std::make_shared<FcallNode>(*$1, *$3);}
 	;
 
 callargs:
-	NAME												{}
-	| callargs NAME										{}
+	NAME											    	{$$=new std::vector<std::shared_ptr<Node>>(); $$->push_back(*$1); delete $1;}
+	| callargs NAME									    	{$1->push_back(*$2); $$=$1; delete $2;}
 	;
 
 indexes:
-	'[' expr ']'										{}
-	| indexes '[' expr ']'								{}
+	'[' expr ']'										    {$$=new std::vector<std::shared_ptr<Node>>(); $$->push_back(*$2); delete $2;}
+	| indexes '[' expr ']'								    {$1->push_back(*$3); $$=$1; delete $3;}
 	;
 
 sizeofargs:
-	type												{}
-	| NAME												{}
+	type											    	{$$=$1;}
+	| NAME												    {$$=$1;}
 	;
 
 type:
-	INT													{}
-	| SHORT												{}
-	| BOOL												{}
-	| VECTOR											{}
+	INT													    {$$=$1;}
+	| SHORT												    {$$=$1;}
+	| BOOL												    {$$=$1;}
+	| VECTOR											    {$$=$1;}
 	;
 
 directions:
-	MOVE RIGHT											{}
-	| MOVE LEFT											{}
-	| MOVE												{}
-	| LEFT												{}
-	| RIGHT												{}
+	MOVE RIGHT											    {}
+	| MOVE LEFT											    {}
+	| MOVE												    {}
+	| LEFT												    {}
+	| RIGHT												    {}
 	;
 
 operands:
-	'(' ')'												{}
-	| '( oplist ')'										{}
+	'(' ')'												    {$$=new std::vector<std::shared_ptr<Node>>();}
+	| '(' oplist ')'										    {$$=$2;}
 	;
-
 oplist:
-	expr												{}
-	| oplist expr										{}
+	expr												    {$$=new std::vector<std::shared_ptr<Node>>(); $$->push_back(*$1); delete $1;}
+	| oplist expr										    {$1->push_back(*$2); $$=$1; delete $2;}
 	;
-
 %%
