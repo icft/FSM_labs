@@ -3,7 +3,7 @@
 %option c++
 
 %{
-#include "tokens.h"
+#include "grammar.tab.hh"
 #include "Datatypes.h"
 #include <stdlib.h>
 void yyerror(char *);
@@ -11,13 +11,13 @@ void yyerror(char *);
 
 %%
 [1-9][0-9]*			          {yylval.ival=atoi(yytext); return INTVAL;}
-(true)/[^a-zA-Z0-9_]		  {yylval.bval=Logic::TRUE; return TRUE;}
-(false)/[^a-zA-Z0-9_]		  {yylval.bval=Logic::FALSE; return FALSE;}
-(undefined)/[^a-zA-Z0-9_]	  {yylval.bval=Logic::UNDEFINED; return UNDEFINED;}
-(int)/[^a-zA-Z0-9_]		      {yylval.types_=Datatypes::INT; return INT;}
-(Sint)/[^a-zA-Z0-9_]		  {yylval.types_=Datatypes::SHORT; return SHORT;}
-(bool)/[^a-zA-Z0-9_]		  {yylval.types_=Datatypes::BOOL; return BOOL;}
-(vector)/[^a-zA-Z0-9_]		  {yylval.types_=Datatypes::VECTOR; return VECTOR;}
+(true)/[^a-zA-Z0-9_]		  {yylval.bval=1; return TRUE;}
+(false)/[^a-zA-Z0-9_]		  {yylval.bval=0; return FALSE;}
+(undefined)/[^a-zA-Z0-9_]	  {yylval.bval=-1; return UNDEFINED;}
+(int)/[^a-zA-Z0-9_]		      {return INT;}
+(Sint)/[^a-zA-Z0-9_]		  {return SHORT;}
+(bool)/[^a-zA-Z0-9_]		  {return BOOL;}
+(vector)/[^a-zA-Z0-9_]		  {return VECTOR;}
 (of)/[^a-zA-Z0-9_]		      {return OF;}
 (sizeof)/[^a-zA-Z0-9_]		  {return SIZEOF;}
 (set)/[^a-zA-Z0-9_]		      {return SET;}
