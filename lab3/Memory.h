@@ -3,7 +3,7 @@
 #include "Datatypes.h"
 #include <map>
 #include <memory>
-#include "Nodes.h"
+// #include "Nodes.h"
 
 enum class UnitType {VARIABLE, FUNCTION};
 
@@ -438,6 +438,15 @@ public:
 
 
 
+bool contains(std::map<std::string, std::shared_ptr<MemoryUnit>> m, std::string s) {
+    for (auto it = m.begin(); it != m.end(); it++) {
+        if (it->first == s) {
+            return true;
+        }
+    }
+    return false;
+}
+
 class Memory {
 private:
     std::shared_ptr<Memory> parent;
@@ -450,13 +459,13 @@ public:
         parent = nullptr;
     }
     void add(std::shared_ptr<VariableUnit> var) {
-        if (local.contains(var->get_name())) {
+        if (contains(local, var->get_name())) {
             throw MemoryError("Variable with this name exists");
         }
         local[var->get_name()] = var;
     }
     void add(std::shared_ptr<FunctionUnit> func) {
-        if (local.contains(func->get_name())) {
+        if (contains(local, func->get_name())) {
             throw MemoryError("Function with this name exists");
         }
         local[func->get_name()] = func;
@@ -464,7 +473,7 @@ public:
     std::shared_ptr<VariableUnit> operator[](std::string name) {
         if (local[name]->get_type() != UnitType::VARIABLE) {
             throw MemoryError("Variable with this name doesn't exists");
-        } else if (local.contains(name) && local[name]->get_type() == UnitType::VARIABLE) {
+        } else if (contains(local, name) && local[name]->get_type() == UnitType::VARIABLE) {
             return std::dynamic_pointer_cast<VariableUnit>(local[name]);
         } else {
             return (*parent)[name];
@@ -473,7 +482,7 @@ public:
     std::shared_ptr<FunctionUnit> operator[](std::pair<std::string, std::vector<Datatypes>> p) {
         if (local[p.first]->get_type() != UnitType::FUNCTION) {
             throw MemoryError("Function with this name doesn't exists");
-        } else if (local.contains(p.first) && local[p.first]->get_type() == UnitType::FUNCTION) {
+        } else if (/*contains(local, p.first)*/local.contains(p.first) && local[p.first]->get_type() == UnitType::FUNCTION) {
             if (!std::dynamic_pointer_cast<FunctionUnit>(local[p.first])->check_all(p.second)) {
                 throw TypeError("Error in arg list");
             } else {
