@@ -165,50 +165,53 @@ public:
 
 class Vector : public Object {
 public:
-    std::vector<std::shared_ptr<Object>> vec;
+    std::shared_ptr<Object>* vec;
     std::vector<int> dimentions;
+    int count;
     Datatypes type = Datatypes::VECTOR;
 
     Vector(std::vector<int> dims) {
-        auto count = 1;
+        auto c = 1;
         for (auto it : dims) {
             if (it < 0)
                 throw IndexError("Index can't be negative");
-            count *= dims[it];
+            c *= dims[it];
         }
         //auto count = std::accumulate(std::begin(dims), std::end(dims), 1, std::multiplies<int>());
-        if (count < 0) {
+        if (c < 0) {
             throw OverflowError("Int overflow");
         }
+        count = c;
         dims = dimentions;
-        vec.reserve(count);
+        vec = new std::shared_ptr<Object>[count];
         /*for (int i = 0; i < count; i++) {
             vec.push_back(std::make_shared<Object>());
         }*/
     }
     Vector(std::vector<std::shared_ptr<Object>> v) {
-        for (auto it : v) {
-            vec.push_back(it);
-        }
+        vec = new std::shared_ptr<Object>[v.size()];
+        for (int i = 0; i < v.size(); i++)
+            vec[i] = v[i];
     }
     Vector(std::vector<int> dims, std::vector<std::shared_ptr<Object>> v) {
-        auto count = 1;
+        auto c = 1;
         for (auto it : dims) {
             if (it < 0)
                 throw IndexError("Index can't be negative");
-            count *= dims[it];
+            c *= dims[it];
         }
         //auto count = std::accumulate(std::begin(dims), std::end(dims), 1, std::multiplies<int>());
-        if (count < 0) {
+        if (c < 0) {
             throw OverflowError("Int overflow");
         }
-        if (count != v.size()) {
+        if (c != v.size()) {
             throw SyntaxError("The dimensions must match ");
         }
+        count = c;
         dimentions = dims;
-        for (auto it : v) {
-            vec.push_back(it);
-        }
+        vec = new std::shared_ptr<Object>[v.size()];
+        for (int i = 0; i < v.size(); i++)
+            vec[i] = v[i];
     }
     Vector(Vector&& v) : vec(std::move(v.vec)), dimentions(std::move(v.dimentions)) {}
     virtual bool operator==(std::shared_ptr<Object> obj) {
@@ -216,7 +219,7 @@ public:
             throw TypeError("Vector cannot be compared with other types");
         }
         auto v = std::dynamic_pointer_cast<Vector>(obj);
-        if (v->vec.size() != vec.size()) {
+        if (v->count != count) {
             return false;
         }
         if (v->dimentions.size() != dimentions.size()) {
@@ -227,7 +230,7 @@ public:
                 return false;
             }
         }
-        for (auto i = 0; i < vec.size(); i++) {
+        for (auto i = 0; i < count; i++) {
             if (v->vec[i] != vec[i]) {
                 return false;
             }
@@ -243,6 +246,9 @@ public:
         return type;
     }
     std::shared_ptr<Object> operator[](std::vector<int> dims) {
+        if (dimentions.size() != dims.size()) {
+            throw OverflowError("Out of range");
+        }
         std::vector<int> s;
         for (auto i = 0; i < dimentions.size(); i++) {
             s.push_back(1);
@@ -254,6 +260,9 @@ public:
         for (auto i = 0; i < s.size(); i++) {
             if (dims[i] < 0)
                 throw IndexError("Index can't be negative");
+            if (dims[i]+1 > dimentions[i]) {
+                throw OverflowError("Out of range");
+            }
             index += s[i] * dims[i];
         }
         return vec[index];
