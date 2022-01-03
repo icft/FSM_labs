@@ -5,11 +5,11 @@
 #include <map>
 #include <vector>
 
-
+std::shared_ptr<MemoryUnit> exec(std::shared_ptr<Node> u, std::shared_ptr<Memory> m);
 
 enum class NodeType {VARLEAF, INTLEAF, SHORTLEAF, BOOLLEAF, ADDNODE, SUBNODE, ANDNODE, NANDNODE,
         ORNODE, NORNODE, SMALLERNODE, LARGERNODE, SETNODE, LOOPNODE, FDECLNODE,
-        SIZEOFNODE, IFNODE, FCALLNODE, VECDECLNODE, INDEXNODE, VARDECLNODE, STATEMENT};
+        SIZEOFNODE, IFNODE, FCALLNODE, VECDECLNODE, INDEXNODE, VARDECLNODE, STATEMENT, VARLIST};
 
 class Node {
 public:
@@ -30,7 +30,8 @@ public:
     NodeType type = NodeType::INTLEAF;
 
     VarLeaf() = default;
-    VarLeaf(const std::string& s) {
+    VarLeaf(int line, const std::string& s) {
+        line_number = line;
         name = s;
     }
     virtual ~VarLeaf() = default;
@@ -45,12 +46,12 @@ public:
     NodeType type = NodeType::INTLEAF;
 
     IntLeaf() = default;
-    IntLeaf(MemoryUnit& m) {
+    IntLeaf(MemoryUnit m) {
         data = std::make_shared<MemoryUnit>(m);
     }
-    IntLeaf(std::int32_t value, int number) {
+    IntLeaf(int line, std::int32_t value) {
         data = std::make_shared<MemoryUnit>(std::make_shared<Int>(value));
-        line_number = number;
+        line_number = line;
     }
     virtual ~IntLeaf() = default;
     virtual NodeType get_type() {
@@ -64,12 +65,12 @@ public:
     NodeType type = NodeType::SHORTLEAF;
 
     ShortLeaf() = default;
-    ShortLeaf(MemoryUnit& m) {
+    ShortLeaf(MemoryUnit m) {
         data = std::make_shared<MemoryUnit>(m);
     }
-    ShortLeaf(std::int16_t value, int number) {
+    ShortLeaf(int line, std::int16_t value) {
         data = std::make_shared<MemoryUnit>(std::make_shared<Short>(value));
-        line_number = number;
+        line_number = line;
     }
     virtual ~ShortLeaf() = default;
     virtual NodeType get_type() {
@@ -83,12 +84,12 @@ public:
     NodeType type = NodeType::BOOLLEAF;
 
     BoolLeaf() = default;
-    BoolLeaf(MemoryUnit& m) {
+    BoolLeaf(MemoryUnit m) {
         data = std::make_shared<MemoryUnit>(m);
     }
-    BoolLeaf(Logic value, int number) {
+    BoolLeaf(int line, Logic value) {
         data = std::make_shared<MemoryUnit>(std::make_shared<Bool>(value));
-        line_number = number;
+        line_number = line;
     }
     virtual ~BoolLeaf() = default;
     virtual NodeType get_type() {
@@ -103,8 +104,9 @@ public:
     NodeType type = NodeType::ADDNODE;
 
     AddNode() = default;
-    AddNode(const std::shared_ptr<Node>& l, const std::shared_ptr<Node>& r) {
+    AddNode(int line, const std::shared_ptr<Node>& l, const std::shared_ptr<Node>& r) {
         if (l && r) {
+            line_number = line;
             left = l;
             right = r;
         }
@@ -125,8 +127,9 @@ public:
     NodeType type = NodeType::SUBNODE;
 
     SubNode() = default;
-    SubNode(const std::shared_ptr<Node>& l, const std::shared_ptr<Node>& r) {
+    SubNode(int line, const std::shared_ptr<Node>& l, const std::shared_ptr<Node>& r) {
         if (l && r) {
+            line_number = line;
             left = l;
             right = r;
         }
@@ -147,8 +150,9 @@ public:
     NodeType type = NodeType::ANDNODE;
 
     AndNode() = default;
-    AndNode(const std::shared_ptr<Node>& l, const std::shared_ptr<Node>& r) {
+    AndNode(int line, const std::shared_ptr<Node>& l, const std::shared_ptr<Node>& r) {
         if (l && r) {
+            line_number = line;
             left = l;
             right = r;
         }
@@ -169,8 +173,9 @@ public:
     NodeType type = NodeType::NANDNODE;
 
     NandNode() = default;
-    NandNode(const std::shared_ptr<Node>& l, const std::shared_ptr<Node>& r) {
+    NandNode(int line, const std::shared_ptr<Node>& l, const std::shared_ptr<Node>& r) {
         if (l && r) {
+            line_number = line;
             left = l;
             right = r;
         }
@@ -191,7 +196,7 @@ public:
     NodeType type = NodeType::ORNODE;
 
     OrNode() = default;
-    OrNode(const std::shared_ptr<Node>& l, const std::shared_ptr<Node>& r) {
+    OrNode(int line, const std::shared_ptr<Node>& l, const std::shared_ptr<Node>& r) {
         if (l && r) {
             left = l;
             right = r;
@@ -213,8 +218,9 @@ public:
     NodeType type = NodeType::NORNODE;
 
     NorNode() = default;
-    NorNode(const std::shared_ptr<Node>& l, const std::shared_ptr<Node>& r) {
+    NorNode(int line, const std::shared_ptr<Node>& l, const std::shared_ptr<Node>& r) {
         if (l && r) {
+            line_number = line;
             left = l;
             right = r;
         }
@@ -235,8 +241,9 @@ public:
     NodeType type = NodeType::SMALLERNODE;
 
     SmallerNode() = default;
-    SmallerNode(const std::shared_ptr<Node>& l, const std::shared_ptr<Node>& r) {
+    SmallerNode(int line, const std::shared_ptr<Node>& l, const std::shared_ptr<Node>& r) {
         if (l && r) {
+            line_number = line;
             left = l;
             right = r;
         }
@@ -257,8 +264,9 @@ public:
     NodeType type = NodeType::LARGERNODE;
 
     LargerNode() = default;
-    LargerNode(const std::shared_ptr<Node>& l, const std::shared_ptr<Node>& r) {
+    LargerNode(int line, const std::shared_ptr<Node>& l, const std::shared_ptr<Node>& r) {
         if (l && r) {
+            line_number = line;
             left = l;
             right = r;
         }
@@ -279,8 +287,9 @@ public:
     NodeType type = NodeType::SETNODE;
 
     SetNode() = default;
-    SetNode(const std::shared_ptr<Node>& l, const std::shared_ptr<Node>& r) {
+    SetNode(int line, const std::shared_ptr<Node>& l, const std::shared_ptr<Node>& r) {
         if (l && r) {
+            line_number = line;
             left = l;
             right = r;
         }
@@ -298,11 +307,12 @@ public:
     NodeType type = NodeType::LOOPNODE;
 
     LoopNode() = default;
-    LoopNode(std::shared_ptr<Node> cond, std::shared_ptr<Node> c) {
+    LoopNode(int line, std::shared_ptr<Node> cond, std::shared_ptr<Node> c) {
         if (cond == nullptr) {
             throw SyntaxError("Loop must have  a condition");
         }
         else {
+            line_number = line;
             condition = cond;
             code = c;
         }
@@ -323,7 +333,8 @@ public:
     NodeType type = NodeType::FDECLNODE;
 
     FDeclNode() = default;
-    FDeclNode(std::string n, std::shared_ptr<Node> c, std::vector<std::pair<Datatypes, std::string>> p, std::shared_ptr<Node> r) {
+    FDeclNode(int line, std::string n, std::shared_ptr<Node> c, std::vector<std::pair<Datatypes, std::string>> p, std::shared_ptr<Node> r) {
+        line_number = line;
         name = n;
         code = c;
         params = p;
@@ -344,7 +355,9 @@ public:
     NodeType type = NodeType::FCALLNODE;
 
     FcallNode() = default;
-    FcallNode(std::string n, std::vector<std::shared_ptr<Node>> p) : name(n), params(p) {}
+    FcallNode(int line, std::string n, std::vector<std::shared_ptr<Node>> p) : name(n), params(p) {
+        line_number = line;
+    }
     virtual ~FcallNode() = default;
     virtual NodeType get_type() {
         return type;
@@ -357,13 +370,23 @@ public:
     NodeType type = NodeType::SIZEOFNODE;
 
     SizeofNode() = default;
-    SizeofNode(std::shared_ptr<Node> i) {
-        if (i) {
-            next = i;
+    SizeofNode(int line, Datatypes t) {
+        if ( t == Datatypes::INT) {
+            line_number = line;
+            next = std::make_shared<IntLeaf>(MemoryUnit(std::make_shared<Int>()));
+        } else if (t == Datatypes::SHORT) {
+            line_number = line;
+            next = std::make_shared<IntLeaf>(MemoryUnit(std::make_shared<Short>()));
+        } else if (t ==Datatypes::BOOL) {
+            line_number = line;
+            next = std::make_shared<IntLeaf>(MemoryUnit(std::make_shared<Bool>()));
+        } else {
+            throw SyntaxError("Can't be computed for a vector");
         }
-        else {
-            throw SyntaxError("Sizeof must have variable or type");
-        }
+    }
+    SizeofNode(int line, std::string n) {
+        line_number = line;
+        next = std::make_shared<VarLeaf>(line, n);
     }
     virtual ~SizeofNode() = default;
     virtual NodeType get_type() {
@@ -379,8 +402,9 @@ public:
     NodeType type = NodeType::IFNODE;
 
     IfNode() = default;
-    IfNode(std::shared_ptr<Node> c, std::shared_ptr<Node> i, std::shared_ptr<Node> e = nullptr) {
+    IfNode(int line, std::shared_ptr<Node> c, std::shared_ptr<Node> i, std::shared_ptr<Node> e = nullptr) {
         if (c) {
+            line_number = line;
             condition = c;
             if_code = i;
             else_code = e;
@@ -400,10 +424,53 @@ public:
     std::string name;
     std::vector<std::shared_ptr<Node>> elems;
     std::vector<std::shared_ptr<Node>> dims;
+    int vecof_count;
+    bool main;
+
+    std::vector<std::shared_ptr<Object>> objects;
+    std::vector<int> real_dims;
+
     NodeType type = NodeType::VECDECLNODE;
 
     VecDeclNode() = default;
-    VecDeclNode(std::string n, std::vector<std::shared_ptr<Node>> e = {}, std::vector<std::shared_ptr<Node>> d = {}) : name(n), elems(e), dims(d) {}
+    VecDeclNode(int line, int v, std::string n, std::vector<std::shared_ptr<Node>> e = {}, std::vector<std::shared_ptr<Node>> d = {}) : vecof_count(v), name(n), elems(e), dims(d), main(true) {
+        line_number = line;
+    }
+    VecDeclNode(int line, std::vector<std::shared_ptr<Node>> e) : elems(e) {
+        name = {}; dims = {}; vecof_count = {}; main = false;
+        line_number = line;
+    }
+    void init(std::vector<std::shared_ptr<Node>> v, std::shared_ptr<Memory> m) {
+        std::pair<int, std::vector<Object>> p;
+        auto k = false;
+        auto s = 0;
+        for (auto it = v.begin(); it != v.end(); it++) {
+            if ((*it)->get_type() == NodeType::VECDECLNODE) {
+                if (it == v.begin()) {
+                    s = std::dynamic_pointer_cast<VecDeclNode>(*it)->elems.size();
+                } else {
+                    if (s != std::dynamic_pointer_cast<VecDeclNode>(*it)->elems.size()) {
+                        throw SyntaxError("Different sizes");
+                    }
+                }
+                init(std::dynamic_pointer_cast<VecDeclNode>(*it)->elems, m);
+                k = true;
+            } else if (k && (*it)->get_type() != NodeType::VECDECLNODE) {
+                throw SyntaxError("Vector error");
+            } else if (it != v.begin() && !k && (*it)->get_type() != NodeType::VECDECLNODE) {
+                throw SyntaxError("Vector error");
+            } else {
+                auto n = exec(*it, m);
+                if (!n) {
+                    throw SyntaxError("Error in initialization");
+                }
+                objects.push_back(n->data);
+            }
+        }
+        if (k) {
+            real_dims.push_back(s);
+        }
+    };
     virtual ~VecDeclNode() = default;
     virtual NodeType get_type() {
         return type;
@@ -417,16 +484,22 @@ public:
     NodeType type = NodeType::INDEXNODE;
 
     IndexNode() = default;
-    IndexNode(std::shared_ptr<Node> n, std::vector<std::shared_ptr<Node>> e) : next(n), elems(e) {
+    IndexNode(int line, std::shared_ptr<Node> n, std::vector<std::shared_ptr<Node>> e) : next(n), elems(e) {
        if (!next) {
            throw SyntaxError("Vector missed");
        }
+       line_number = line;
     }
     virtual ~IndexNode() = default;
     virtual NodeType get_type() {
         return type;
     }
 };
+
+typedef struct {
+    std::string name;
+    std::shared_ptr<Node> init;
+} VarDeclaration;
 
 class VarDeclNode : public Node {
 public:
@@ -436,7 +509,8 @@ public:
     NodeType type = NodeType::VARDECLNODE;
 
     VarDeclNode() = default;
-    VarDeclNode(std::string n, Datatypes t, std::shared_ptr<Node> init_node = nullptr) {
+    VarDeclNode(int line, std::string n, Datatypes t, std::shared_ptr<Node> init_node = nullptr) {
+        line_number = line;
         std::shared_ptr<Object> obj;
         if (t == Datatypes::INT) {
             obj = std::make_shared<Int>();
@@ -458,6 +532,23 @@ public:
     virtual NodeType get_type() {
         return type;
     }
+};
+
+class VarListNode : public Node {
+public:
+    Datatypes t;
+    std::vector<std::shared_ptr<Node>> vec;
+    NodeType type = NodeType::VARLIST;
+
+    VarListNode(int line, std::pair<Datatypes, std::vector<VarDeclaration>> p) {
+        t = p.first;
+        line_number = line;
+        for (auto it : p.second) {
+            auto e = std::make_shared<VarDeclNode>(line, it.name, t, it.init);
+            vec.push_back(e);
+        }
+    }
+    ~VarListNode() = default;
 };
 
 class StatementList : public Node {
@@ -620,6 +711,16 @@ std::shared_ptr<MemoryUnit> exec(std::shared_ptr<Node> u, std::shared_ptr<Memory
                 throw ex;
             }
         }
+        case NodeType::VARLIST: {
+            auto v = std::dynamic_pointer_cast<VarListNode>(u);
+            try {
+                for (auto it : v->vec) {
+                    exec(it, m);
+                }
+            } catch (std::exception ex) {
+                throw ex;
+            }
+        }
         case NodeType::FDECLNODE: {
             auto f = std::dynamic_pointer_cast<FDeclNode>(u);
             m->add(f->func);
@@ -634,23 +735,22 @@ std::shared_ptr<MemoryUnit> exec(std::shared_ptr<Node> u, std::shared_ptr<Memory
             auto dims = vecn->dims;
             try {
                 if (!elems.empty() && !dims.empty()) {
-                    std::vector<std::shared_ptr<Object>> tmp1;
-                    std::vector<int> tmp2;
-                    for (auto e : elems) {
-                        auto s = exec(e, m);
-                        if (!s) {
-                            throw SyntaxError("Error in initialization");
-                        }
-                        tmp1.push_back(s->data);
+                    if (vecn->vecof_count != dims.size()) {
+                        throw SyntaxError("The number of VECTOR OF must be equivalent to nesting the vector");
                     }
+                    vecn->init(elems, m);
+                    std::vector<int> tmp;
                     for (auto d : dims) {
                         auto s = exec(d, m);
                         if (!s) {
                             throw SyntaxError("Error in initialization");
                         }
-                        tmp2.push_back((int)*(s->data));
+                        tmp.push_back((int)*(s->data));
                     }
-                    auto vec = std::make_shared<Vector>(tmp2, tmp1);
+                    if (vecn->real_dims != tmp) {
+                        throw SyntaxError("Error in initialization");
+                    }
+                    auto vec = std::make_shared<Vector>(tmp, vecn->objects);
                     auto var = std::make_shared<VariableUnit>(vecn->name, vec);
 
                 } else if (elems.empty() && !dims.empty()) {
@@ -665,15 +765,11 @@ std::shared_ptr<MemoryUnit> exec(std::shared_ptr<Node> u, std::shared_ptr<Memory
                     auto vec = std::make_shared<Vector>(tmp);
                     auto var = std::make_shared<VariableUnit>(vecn->name, vec);
                 } else if (!elems.empty() && dims.empty()) {
-                    std::vector<std::shared_ptr<Object>> tmp;
-                    for (auto e : elems) {
-                        auto s = exec(e, m);
-                        if (!s) {
-                            throw SyntaxError("Error in initialization");
-                        }
-                        tmp.push_back(s->data);
+                    if (vecn->vecof_count != dims.size()) {
+                        throw SyntaxError("The number of VECTOR OF must be equivalent to nesting the vector");
                     }
-                    auto vec = std::make_shared<Vector>(tmp);
+                    vecn->init(elems, m);
+                    auto vec = std::make_shared<Vector>(vecn->objects);
                     auto var = std::make_shared<VariableUnit>(vecn->name, vec);
                 } else {
                     throw SyntaxError("Either a size field or a field for setting values is required");
