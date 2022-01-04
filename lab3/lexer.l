@@ -1,23 +1,21 @@
 %option noyywrap
 %option yylineno
-%option c++
 
 %{
-#include "grammar.tab.hh"
-#include "Datatypes.h"
+#include "grammar.tab.h"
 #include <stdlib.h>
 void yyerror(char *);
 %}
 
 %%
 [1-9][0-9]*			          {yylval.ival=atoi(yytext); return INTVAL;}
-(true)/[^a-zA-Z0-9_]		  {yylval.bval=1; return TRUE;}
-(false)/[^a-zA-Z0-9_]		  {yylval.bval=0; return FALSE;}
-(undefined)/[^a-zA-Z0-9_]	  {yylval.bval=-1; return UNDEFINED;}
-(int)/[^a-zA-Z0-9_]		      {return INT;}
-(Sint)/[^a-zA-Z0-9_]		  {return SHORT;}
-(bool)/[^a-zA-Z0-9_]		  {return BOOL;}
-(vector)/[^a-zA-Z0-9_]		  {return VECTOR;}
+(true)/[^a-zA-Z0-9_]		  {yylval.bval=TRUE; return TRUE_;}
+(false)/[^a-zA-Z0-9_]		  {yylval.bval=FALSE; return FALSE_;}
+(undefined)/[^a-zA-Z0-9_]	  {yylval.bval=UNDEFINED; return UNDEFINED_;}
+(int)/[^a-zA-Z0-9_]		      {yylval.types_=INT; return INT_;}
+(Sint)/[^a-zA-Z0-9_]		  {yylval.types_=SHORT; return SHORT_;}
+(bool)/[^a-zA-Z0-9_]		  {yylval.types_=BOOL; return BOOL_;}
+(vector)/[^a-zA-Z0-9_]		  {yylval.types_=VECTOR; return VECTOR_;}
 (of)/[^a-zA-Z0-9_]		      {return OF;}
 (sizeof)/[^a-zA-Z0-9_]		  {return SIZEOF;}
 (set)/[^a-zA-Z0-9_]		      {return SET;}
@@ -41,6 +39,7 @@ void yyerror(char *);
 (lms)/[^a-zA-Z0-9_]		      {return LMS;}
 (function)/[^a-zA-Z0-9_]	  {return FUNC;}
 (return)/[^a-zA-Z0-9_]		  {return RETURN;}
+(work)/[^a-zA-Z0-9_]		      {return WORK;}
 [\[\]\|\{\},\(\);\n]          {return *yytext;}
 [a-zA-Z_][a-zA-Z_0-9]*        {yylval.string=new std::string(yytext); return NAME;}
 
