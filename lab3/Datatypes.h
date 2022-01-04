@@ -9,8 +9,8 @@
 #include <memory>
 #include "Errors.h"
 
-enum class Datatypes {INT, SHORT, BOOL, VECTOR};
-enum class Logic {TRUE, FALSE, UNDEFINED};
+enum Datatypes {INT, SHORT, BOOL, VECTOR};
+enum Logic {TRUE, FALSE, UNDEFINED};
 
 class Object {
 public:
@@ -32,7 +32,7 @@ public:
 class Int : public Object {
 public:
     std::int32_t value;
-    Datatypes type = Datatypes::INT;
+    Datatypes type = INT;
 
     Int() : value(0) {}
     Int(std::int32_t v) : value(v) {}
@@ -73,7 +73,7 @@ public:
 class Short : public Object {
 public:
     std::int16_t value;
-    Datatypes type = Datatypes::SHORT;
+    Datatypes type = SHORT;
 
     Short() : value(0) {}
     Short(std::int16_t v) : value(v) {}
@@ -115,7 +115,7 @@ public:
 class Bool : public Object {
 public:
     Logic value;
-    Datatypes type = Datatypes::BOOL;
+    Datatypes type = BOOL;
 
     Bool() : value(Logic::UNDEFINED) {}
     Bool(Logic v) : value(v) {}
@@ -168,7 +168,7 @@ public:
     std::shared_ptr<Object>* vec;
     std::vector<int> dimentions;
     int count;
-    Datatypes type = Datatypes::VECTOR;
+    Datatypes type = VECTOR;
 
     Vector(std::vector<int> dims) {
         auto c = 1;
