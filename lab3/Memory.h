@@ -5,7 +5,7 @@
 #include <memory>
 // #include "Nodes.h"
 
-enum class UnitType {VARIABLE, FUNCTION};
+enum UnitType {VARIABLE, FUNCTION};
 
 class MemoryUnit {
 public:
@@ -374,7 +374,7 @@ public:
 class VariableUnit : public MemoryUnit {
 public:
     std::string name;
-    UnitType type = UnitType::VARIABLE;
+    UnitType type = VARIABLE;
 
     ~VariableUnit() = default;
     VariableUnit(std::string s, std::shared_ptr<MemoryUnit> m) : name(s), MemoryUnit(*m) {}
@@ -394,7 +394,7 @@ public:
     std::string name;
     std::vector<std::pair<Datatypes, std::string>> params;
     std::shared_ptr<Node> link;
-    UnitType type = UnitType::FUNCTION;
+    UnitType type = FUNCTION;
 
     FunctionUnit(std::string n, std::vector<std::pair<Datatypes, std::string>> p) {
         name = n;
@@ -482,7 +482,7 @@ public:
     std::shared_ptr<FunctionUnit> operator[](std::pair<std::string, std::vector<Datatypes>> p) {
         if (local[p.first]->get_type() != UnitType::FUNCTION) {
             throw MemoryError("Function with this name doesn't exists");
-        } else if (/*contains(local, p.first)*/local.contains(p.first) && local[p.first]->get_type() == UnitType::FUNCTION) {
+        } else if (contains(local, p.first) && local[p.first]->get_type() == UnitType::FUNCTION) {
             if (!std::dynamic_pointer_cast<FunctionUnit>(local[p.first])->check_all(p.second)) {
                 throw TypeError("Error in arg list");
             } else {
