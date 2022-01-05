@@ -1,7 +1,10 @@
 %{
-#include "Datatypes.h"
 #include "Nodes.h"
-#include "lex.yy.c"
+
+#include <string>
+#include <utility>
+#include <memory>
+#include <vector>
 
 std::shared_ptr<Node>* root;
 extern int yylineno;
@@ -30,9 +33,10 @@ std::pair<Datatypes, std::vector<VarDeclaration>>* vd_list;
 %nonassoc IFX
 %nonassoc ELSE
 %token BEGIN_ END
-%left OR
 %left AND
-%left NOT
+%left OR
+%left NAND
+%left NOR
 %token MOVE LEFT RIGHT
 %token SET
 %token LMS OF
@@ -68,7 +72,7 @@ program:
 
 stmt_list:
 	stmt												    {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<StatementList>(*$1);}
-	| stmt_list stmt									    {cast_stmt(*$1)->add(*$2); $$=$1;}
+	| stmt_list stmt									    {std::dynamic_pointer_cast<StatementList>(*$1)->add(*$2); $$=$1;}
 	;
 
 stmt:
@@ -145,9 +149,9 @@ expr:
 	| expr ADD expr										    {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<AddNode>(yylineno, *$1, *$3);}
 	| expr SUB expr										    {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<SubNode>(yylineno, *$1, *$3);}
 	| expr OR expr										    {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<OrNode>(yylineno, *$1, *$3);}
-	| expr NOT OR expr									    {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<NorNode>(yylineno, *$1, *$4);}
+	| expr NOR expr									        {$$=new std::shared_ptr<Node>(); *$$=std::make_shared<NorNode>(yylineno, *$1, *$3);}
 	| expr AND expr									    	{$$=new std::shared_ptr<Node>(); *$$=std::make_shared<AndNode>(yylineno, *$1, *$3);}
-	| expr NOT AND expr								    	{$$=new std::shared_ptr<Node>(); *$$=std::make_shared<NandNode>(yylineno, *$1, *$4);}
+	| expr NAND expr								    	{$$=new std::shared_ptr<Node>(); *$$=std::make_shared<NandNode>(yylineno, *$1, *$3);}
 	| expr '|' expr SMALLER							    	{$$=new std::shared_ptr<Node>(); *$$=std::make_shared<SmallerNode>(yylineno, *$1, *$3);}
 	| expr '|' expr LARGER							    	{$$=new std::shared_ptr<Node>(); *$$=std::make_shared<LargerNode>(yylineno, *$1, *$3);}
 	| '(' expr ')'									    	{$$=$2;}
@@ -190,6 +194,5 @@ void yyerror(const char* c) {
     std::cout << str << std::endl;
 }
 
-int main() {
-}
+
 
